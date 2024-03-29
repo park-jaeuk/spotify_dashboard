@@ -78,7 +78,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data
-    - ${AIRFLOW_PROJ_DIR:-.}/raw_data:/opt/airflow/raw_data
+    - ${AIRFLOW_PROJ_DIR:-.}/downloads:/opt/airflow/downloads
     - ${AIRFLOW_PROJ_DIR:-.}/transform:/opt/airflow/transform
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
