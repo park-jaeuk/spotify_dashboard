@@ -14,21 +14,8 @@ import os
 import pendulum
 import glob
 import json
+from utils.constant_util import *
 
-SPOTIFY_CLIENT_ID = Variable.get("SPOTIFY_CLIENT_ID")
-SPOTIFY_CLIENT_SECRET = Variable.get("SPOTIFY_CLIENT_SECRET")
-BUCKET_NAME = Variable.get("BUCKET_NAME")
-AIRFLOW_HOME = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-DATA_DIR = os.path.join(AIRFLOW_HOME, 'data')
-RAW_DATA_DIR = os.path.join(AIRFLOW_HOME, 'raw_data')
-TRANSFORM_DIR = os.path.join(AIRFLOW_HOME, 'transform')
-
-
-# # timezone 설정
-# local_tz = pendulum.timezone("Asia/Seoul")
-# # 현재 시간 설정
-# NOW_DATE = datetime.now(tz=local_tz).strftime('%Y-%m-%d')
-NOW_DATE = "2024-03-11"
 
 def upload_to_s3(filename: str, key: str, bucket_name: str, replace: bool) -> None:
     hook = S3Hook("aws_s3")
@@ -39,7 +26,7 @@ def transform_album_csv() -> None:
     
     album_dict = {column: [] for column in columns}
 
-    src_dir_path = os.path.join(RAW_DATA_DIR, f'spotify/api/albums')
+    src_dir_path = os.path.join(DOWNLOADS_DIR, f'spotify/api/albums')
 
     for album_json_path in glob.glob(os.path.join(src_dir_path, "*.json")):
         with open(album_json_path, "r") as album_json:
@@ -66,7 +53,7 @@ def transform_track_csv() -> None:
 
     track_dict = {column: [] for column in columns}
 
-    src_dir_path = os.path.join(RAW_DATA_DIR, f'spotify/api/tracks')
+    src_dir_path = os.path.join(DOWNLOADS_DIR, f'spotify/api/tracks')
 
     for track_json_path in glob.glob(os.path.join(src_dir_path, "*.json")):
         with open(track_json_path, "r") as track_json:
@@ -92,7 +79,7 @@ def transform_artist_csv() -> None:
     
     artist_dict = {column: [] for column in columns}
 
-    src_dir_path = os.path.join(RAW_DATA_DIR, f'spotify/api/artists')
+    src_dir_path = os.path.join(DOWNLOADS_DIR, f'spotify/api/artists')
 
     for artist_json_path in glob.glob(os.path.join(src_dir_path, "*.json")):
         with open(artist_json_path, "r") as artist_json:
@@ -113,7 +100,7 @@ def transform_artist_csv() -> None:
 
 def transform_track_chart_csv() -> None:
     # 트랙 테이블에서 spotify_id(외부 아이디)로 id 값을 가져와서 track_info 연결하기
-    src_dir_path = os.path.join(RAW_DATA_DIR, f'spotify/charts/{NOW_DATE}')
+    src_dir_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{NOW_DATE}')
     src_files = os.path.join(src_dir_path, "*.csv")
     
     columns = ['spotify_track_id', 'now_rank', 'peak_rank', 'previous_rank', 

@@ -15,15 +15,7 @@ import requests
 import pendulum
 import glob
 import json
-
-
-SPOTIFY_CLIENT_ID = Variable.get("SPOTIFY_CLIENT_ID")
-SPOTIFY_CLIENT_SECRET = Variable.get("SPOTIFY_CLIENT_SECRET")
-BUCKET_NAME = Variable.get("BUCKET_NAME")
-AIRFLOW_HOME = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-DATA_DIR = os.path.join(AIRFLOW_HOME, 'data')
-RAW_DATA_DIR = os.path.join(AIRFLOW_HOME, 'raw_data')
-TRANSFORM_DIR = os.path.join(AIRFLOW_HOME, 'transform')
+from utils.constant_util import *
 
 # # timezone 설정
 # local_tz = pendulum.timezone("Asia/Seoul")
@@ -65,7 +57,7 @@ def get_spotify_track_api(**context) -> None:
     spotify_album_id_list = []
     spotify_artist_id_list = []
     
-    tracks_dir = os.path.join(RAW_DATA_DIR, f"spotify/api/tracks")
+    tracks_dir = os.path.join(DOWNLOADS_DIR, f"spotify/api/tracks")
     os.makedirs(tracks_dir, exist_ok=True)  # exist_ok=True를 설정하면 디렉토리가 이미 존재할 경우 무시
         
     # 우선 market은 동일한 us로 설정(해당 market에서 사용 가능해야만 api 제공)
@@ -120,7 +112,7 @@ def get_spotify_album_api(**context) -> None:
     headers = {"Authorization": f"Bearer {access_token}"}
     params = {"market": "US"}
 
-    albums_dir = os.path.join(RAW_DATA_DIR, f"spotify/api/albums")
+    albums_dir = os.path.join(DOWNLOADS_DIR, f"spotify/api/albums")
     os.makedirs(albums_dir, exist_ok=True)  # exist_ok=True를 설정하면 디렉토리가 이미 존재할 경우 무시
     
     for spotify_album_id in spotify_album_id_list:
@@ -151,7 +143,7 @@ def get_spotify_artist_api(**context) -> None:
     headers = {"Authorization": f"Bearer {access_token}"}
     params = {"market": "US"}
 
-    artists_dir = os.path.join(RAW_DATA_DIR, f"spotify/api/artists")
+    artists_dir = os.path.join(DOWNLOADS_DIR, f"spotify/api/artists")
     os.makedirs(artists_dir, exist_ok=True)  # exist_ok=True를 설정하면 디렉토리가 이미 존재할 경우 무시
     
     for spotify_artist_id in spotify_artist_id_list:
