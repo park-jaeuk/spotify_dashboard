@@ -4,7 +4,7 @@ CREATE OR REPLACE STAGE artist_stage
     STORAGE_INTEGRATION = s3_int
     URL = 's3://airflow-gin-bucket/transform/spotify/api/artists/2024-03-11/';
 
-CREATE OR REPLACE TABLE artist (
+CREATE OR TABLE artist (
     id bigint	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
 	spotify_id	varchar	NULL,
 	name	varchar	NULL,

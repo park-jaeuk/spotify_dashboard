@@ -40,7 +40,8 @@ FROM (
         $5release_date, $6release_date_precision
     FROM '@album_stage/transform_album.csv'
 )
-FILE_FORMAT = (TYPE = CSV, SKIP_HEADER = 1)
+FILE_FORMAT = (TYPE = CSV, SKIP_HEADER = 1,
+    FIELD_OPTIONALLY_ENCLOSED_BY='"', ESCAPE_UNENCLOSED_FIELD = NONE)
 ON_ERROR = 'ABORT_STATEMENT'; 
         
 COMMIT
