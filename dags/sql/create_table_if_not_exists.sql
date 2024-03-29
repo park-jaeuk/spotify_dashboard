@@ -16,11 +16,11 @@ CREATE TABLE IF NOT EXISTS album (
 );
 
 CREATE TABLE IF NOT EXISTS TABLE track (
-	id	bigint	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-	spotify_id	varchar	NULL,
-    spotify_album_id	varchar NULL,
-	name	varchar	NULL,
-	duration_ms	bigint	NULL
+	id	BIGINT	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
+	spotify_id	VARCHAR	NULL,
+    spotify_album_id	VARCHAR NULL,
+	name	VARCHAR	NULL,
+	duration_ms	BIGINT	NULL
 );
 
 CREATE TABLE IF NOT EXISTS genre (
@@ -29,29 +29,29 @@ CREATE TABLE IF NOT EXISTS genre (
 );
 
 CREATE TABLE IF NOT EXISTS track_artist (
-	id	bigint	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-	spotify_artist_id	varchar	NOT NULL,
-	spotify_track_id	varchar	NOT NULL,
-	type	varchar	NULL
+	id	BIGINT	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
+	spotify_artist_id	VARCHAR	NOT NULL,
+	spotify_track_id	VARCHAR	NOT NULL,
+	type	VARCHAR	NULL
 );
 
 
 CREATE TABLE IF NOT EXISTS album_genre (
-	id	bigint	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-	album_id	bigint	NOT NULL,
-	genre_id	bigint	NOT NULL
+	id	BIGINT	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
+	album_id	VARCHAR	NOT NULL,
+	genre_id	VARCHAR	NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS track_chart (
-	id	bigint	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-	spotify_track_id	bigint	NULL,
-	now_rank	int	NULL,
-	peak_rank	int	NULL,
-	previous_rank	int	NULL,
-	total_days_on_chart	int	NULL,
-	stream_count	bigint	NULL,
-    region      varchar  NULL,
-	chart_date	datetime	NULL
+	id	BIGINT	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
+	spotify_track_id	BIGINT	NULL,
+	now_rank	INT	NULL,
+	peak_rank	INT	NULL,
+	previous_rank	INT	NULL,
+	total_days_on_chart	INT	NULL,
+	stream_count	BIGINT	NULL,
+    region      VARCHAR  NULL,
+	chart_date	DATETIME	NULL
 );
 
 
