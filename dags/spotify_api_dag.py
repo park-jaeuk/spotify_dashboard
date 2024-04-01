@@ -17,12 +17,6 @@ import glob
 import json
 from utils.constant_util import *
 
-# # timezone 설정
-# local_tz = pendulum.timezone("Asia/Seoul")
-# # 현재 시간 설정
-# NOW_DATE = datetime.now(tz=local_tz).strftime('%Y-%m-%d')
-NOW_DATE = "2024-03-11"
-
 def get_access_token(spotify_client_id: str, spotify_client_secret: str) -> str:
     endpoint = 'https://accounts.spotify.com/api/token'
 
