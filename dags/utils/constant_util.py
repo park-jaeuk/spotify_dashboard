@@ -6,8 +6,14 @@ import pendulum
 
 SPOTIFY_CLIENT_ID = Variable.get("SPOTIFY_CLIENT_ID")
 SPOTIFY_CLIENT_SECRET = Variable.get("SPOTIFY_CLIENT_SECRET")
+SPOTIFY_CHARTS_LOGIN_USERNAME = Variable.get("SPOTIFY_CHARTS_LOGIN_USERNAME")
+SPOTIFY_CHARTS_LOGIN_PASSWORD = Variable.get("SPOTIFY_CHARTS_LOGIN_PASSWORD")
 BUCKET_NAME = Variable.get("BUCKET_NAME")
-AIRFLOW_HOME = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+REGIONS = Variable.get("REGIONS", deserialize_json=True)
+
+# utils -> dags -> airflow
+AIRFLOW_HOME = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 DATA_DIR = os.path.join(AIRFLOW_HOME, 'data')
 DOWNLOADS_DIR = os.path.join(AIRFLOW_HOME, 'downloads')
 TRANSFORM_DIR = os.path.join(AIRFLOW_HOME, 'transform')
@@ -16,6 +22,6 @@ TRANSFORM_DIR = os.path.join(AIRFLOW_HOME, 'transform')
 # local_tz = pendulum.timezone("Asia/Seoul")
 # # 현재 시간 설정
 # NOW_DATE = datetime.now(tz=local_tz).strftime('%Y-%m-%d')
-US_DATE = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
+# US_DATE = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
 # US_DATE = "2024-03-22"
-NOW_DATE = "2024-03-11"
+NOW_DATE = "2024-03-22"
