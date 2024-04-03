@@ -4,8 +4,13 @@ from datetime import datetime, timedelta
 import os
 import pendulum
 
-SPOTIFY_CLIENT_ID = Variable.get("SPOTIFY_CLIENT_ID")
-SPOTIFY_CLIENT_SECRET = Variable.get("SPOTIFY_CLIENT_SECRET")
+SPOTIFY = Variable.get("SPOTIFY", deserialize_json=True)
+SPOTIFY_CLIENT_IDS = SPOTIFY["CLIENT_IDS"]
+SPOTIFY_CLIENT_SECRETS = SPOTIFY["CLIENT_SECRETS"]
+
+SPOTIFY_CLIENT_ID = SPOTIFY["CLIENT_IDS"][0]
+SPOTIFY_CLIENT_SECRET = SPOTIFY["CLIENT_SECRETS"][0]
+
 SPOTIFY_CHARTS_LOGIN_USERNAME = Variable.get("SPOTIFY_CHARTS_LOGIN_USERNAME")
 SPOTIFY_CHARTS_LOGIN_PASSWORD = Variable.get("SPOTIFY_CHARTS_LOGIN_PASSWORD")
 BUCKET_NAME = Variable.get("BUCKET_NAME")
@@ -24,4 +29,5 @@ TRANSFORM_DIR = os.path.join(AIRFLOW_HOME, 'transform')
 # NOW_DATE = datetime.now(tz=local_tz).strftime('%Y-%m-%d')
 # US_DATE = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
 # US_DATE = "2024-03-22"
-NOW_DATE = "2024-03-22"
+# NOW_DATE = "2024-03-22"
+NOW_DATE = "2024-03-11"
