@@ -15,6 +15,8 @@ import pendulum
 import glob
 import json
 from utils.constant_util import *
+from utils import common_util
+
 
 
 def upload_to_s3(filename: str, key: str, bucket_name: str, replace: bool) -> None:
@@ -139,6 +141,36 @@ def transform_track_chart_csv() -> None:
     logging.info(len(concat_df))
 
 
+def upload_transform_album_csv_to_s3(bucket_name: str) -> None:
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/albums/{NOW_DATE}')
+    filenames = glob.glob(os.path.join(src_path, f"transform_album.csv"))
+    keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
+
+    common_util.upload_file_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
+
+def upload_transform_track_csv_to_s3(bucket_name: str) -> None:
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/tracks/{NOW_DATE}')
+    filenames = glob.glob(os.path.join(src_path, f"transform_track.csv"))
+    keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
+
+    common_util.upload_file_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
+
+def upload_transform_artist_csv_to_s3(bucket_name: str) -> None:
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/artists/{NOW_DATE}')
+    filenames = glob.glob(os.path.join(src_path, f"transform_artist.csv"))
+    keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
+
+    common_util.upload_file_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
+
+
+def upload_transform_track_chart_csv_to_s3(bucket_name: str) -> None:
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/charts/{NOW_DATE}')
+    filenames = glob.glob(os.path.join(src_path, f"transform-concat-daily-{NOW_DATE}.csv"))
+    keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
+
+    common_util.upload_file_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
+
+
 with DAG(dag_id="transform_dag",
          schedule_interval=None,
          start_date=datetime(2024, 1, 1),
@@ -153,17 +185,11 @@ with DAG(dag_id="transform_dag",
         python_callable=transform_album_csv,
     )
 
-    filename = os.path.join(TRANSFORM_DIR, f"spotify/api/albums/{NOW_DATE}/transform_album.csv")
-    key = os.path.join("transform", f"spotify/api/albums/{NOW_DATE}/transform_album.csv")
-
-    load_to_s3_transform_album_task = PythonOperator(
-        task_id = "load_to_s3_transform_album_task",
-        python_callable=upload_to_s3,
-        op_kwargs={
-            "filename": filename,
-            "key": key,
-            "bucket_name": "airflow-gin-bucket",
-            "replace": True    
+    upload_transform_album_csv_to_s3_task = PythonOperator(
+        task_id="upload_transform_album_csv_to_s3_task",
+        python_callable=upload_transform_album_csv_to_s3,
+        op_kwargs= {
+            "bucket_name": BUCKET_NAME
         }
     )
 
@@ -172,17 +198,11 @@ with DAG(dag_id="transform_dag",
         python_callable=transform_artist_csv
     )
 
-    filename = os.path.join(TRANSFORM_DIR, f"spotify/api/artists/{NOW_DATE}/transform_artist.csv")
-    key = os.path.join("transform", f"spotify/api/artists/{NOW_DATE}/transform_artist.csv")
-
-    load_to_s3_transform_artist_task = PythonOperator(
-        task_id = "load_to_s3_transform_artist_task",
-        python_callable=upload_to_s3,
-        op_kwargs={
-            "filename": filename,
-            "key": key,
-            "bucket_name": "airflow-gin-bucket",
-            "replace": True    
+    upload_transform_artist_csv_to_s3_task = PythonOperator(
+        task_id="upload_transform_artist_csv_to_s3_task",
+        python_callable=upload_transform_artist_csv_to_s3,
+        op_kwargs= {
+            "bucket_name": BUCKET_NAME
         }
     )
 
@@ -191,17 +211,11 @@ with DAG(dag_id="transform_dag",
         python_callable=transform_track_csv
     )
 
-    filename = os.path.join(TRANSFORM_DIR, f"spotify/api/tracks/{NOW_DATE}/transform_track.csv")
-    key = os.path.join("transform", f"spotify/api/tracks/{NOW_DATE}/transform_track.csv")
-
-    load_to_s3_transform_track_task = PythonOperator(
-        task_id = "load_to_s3_transform_track_task",
-        python_callable=upload_to_s3,
-        op_kwargs={
-            "filename": filename,
-            "key": key,
-            "bucket_name": "airflow-gin-bucket",
-            "replace": True    
+    upload_transform_track_csv_to_s3_task = PythonOperator(
+        task_id="upload_transform_track_csv_to_s3_task",
+        python_callable=upload_transform_track_csv_to_s3,
+        op_kwargs= {
+            "bucket_name": BUCKET_NAME
         }
     )
 
@@ -210,17 +224,11 @@ with DAG(dag_id="transform_dag",
         python_callable=transform_track_chart_csv
     )
 
-    filename = os.path.join(TRANSFORM_DIR, f"spotify/charts/{NOW_DATE}/transform-concat-daily-{NOW_DATE}.csv")
-    key = os.path.join("transform", f"spotify/charts/{NOW_DATE}/transform-concat-daily-{NOW_DATE}.csv")
-
-    load_to_s3_transform_track_chart_task = PythonOperator(
-        task_id = "load_to_s3_transform_track_chart_task",
-        python_callable=upload_to_s3,
-        op_kwargs={
-            "filename": filename,
-            "key": key,
-            "bucket_name": "airflow-gin-bucket",
-            "replace": True    
+    upload_transform_track_chart_csv_to_s3_task = PythonOperator(
+        task_id="upload_transform_track_chart_csv_to_s3_task",
+        python_callable=upload_transform_track_chart_csv_to_s3,
+        op_kwargs= {
+            "bucket_name": BUCKET_NAME
         }
     )
 
@@ -244,12 +252,12 @@ with DAG(dag_id="transform_dag",
     start_task >> [transform_album_csv_task,  transform_artist_csv_task
                    , transform_track_csv_task]
     
-    transform_album_csv_task >> load_to_s3_transform_album_task
-    transform_artist_csv_task >> load_to_s3_transform_artist_task
-    transform_track_csv_task >> load_to_s3_transform_track_task
+    transform_album_csv_task >> upload_transform_album_csv_to_s3_task
+    transform_artist_csv_task >> upload_transform_artist_csv_to_s3_task
+    transform_track_csv_task >> upload_transform_track_csv_to_s3_task
 
-    [load_to_s3_transform_album_task, load_to_s3_transform_artist_task, 
-     load_to_s3_transform_track_task] >> transform_track_chart_csv_task
+    [upload_transform_album_csv_to_s3_task, upload_transform_artist_csv_to_s3_task, 
+     upload_transform_track_csv_to_s3_task] >> transform_track_chart_csv_task
 
-    transform_track_chart_csv_task >> load_to_s3_transform_track_chart_task >> trigger_upload_to_snowflake_task
+    transform_track_chart_csv_task >> upload_transform_track_chart_csv_to_s3_task >> trigger_upload_to_snowflake_task
     trigger_upload_to_snowflake_task >> end_task
