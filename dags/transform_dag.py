@@ -239,6 +239,19 @@ with DAG(dag_id="transform_dag",
         }
     )
 
+    transform_track_artist_csv_task = PythonOperator(
+        task_id = "transform_track_artist_csv_task",
+        python_callable=transform_track_artist_csv
+    )
+
+    upload_transform_track_artist_csv_to_s3_task = PythonOperator(
+        task_id="upload_transform_track_artist_csv_to_s3_task",
+        python_callable=upload_transform_track_artist_csv_to_s3,
+        op_kwargs= {
+            "bucket_name": BUCKET_NAME
+        }
+    )
+
     trigger_upload_to_snowflake_task = TriggerDagRunOperator(
         task_id='trigger_upload_to_snowflake_task',
         trigger_dag_id='upload_to_snowflake_dag',
@@ -257,14 +270,15 @@ with DAG(dag_id="transform_dag",
     )
 
     start_task >> [transform_album_csv_task,  transform_artist_csv_task
-                   , transform_track_csv_task]
+                   , transform_track_csv_task, transform_track_chart_csv_task, transform_track_artist_csv_task]
     
     transform_album_csv_task >> upload_transform_album_csv_to_s3_task
     transform_artist_csv_task >> upload_transform_artist_csv_to_s3_task
     transform_track_csv_task >> upload_transform_track_csv_to_s3_task
+    transform_track_chart_csv_task >> upload_transform_track_chart_csv_to_s3_task
+    transform_track_artist_csv_task >> upload_transform_track_artist_csv_to_s3_task
 
     [upload_transform_album_csv_to_s3_task, upload_transform_artist_csv_to_s3_task, 
-     upload_transform_track_csv_to_s3_task] >> transform_track_chart_csv_task
-
-    transform_track_chart_csv_task >> upload_transform_track_chart_csv_to_s3_task >> trigger_upload_to_snowflake_task
+     upload_transform_track_csv_to_s3_task, upload_transform_track_chart_csv_to_s3_task, upload_transform_track_artist_csv_to_s3_task] >> trigger_upload_to_snowflake_task
+    
     trigger_upload_to_snowflake_task >> end_task
