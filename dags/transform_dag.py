@@ -34,7 +34,7 @@ def transform_track_csv() -> None:
         track_dict['duration_ms'].append(track_api['duration_ms'])
     
     track_df = pd.DataFrame(track_dict, columns = columns)
-    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/tracks/{US_DATE}')
+    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/tracks/{US_DATE}')
     os.makedirs(dst_dir_path, exist_ok=True)
     dst_file_path = os.path.join(dst_dir_path, f"transform_track.csv")
     track_df.to_csv(dst_file_path, encoding='utf-8-sig',index=False)
@@ -66,7 +66,7 @@ def transform_artist_csv() -> None:
     columns = ['spotify_artist_id', 'name', 'type']
     artist_dict = {column: [] for column in columns}
 
-    src_dir_path = os.path.join(DOWNLOADS_DIR, f'spotify/artists')
+    src_dir_path = os.path.join(DOWNLOADS_DIR, f'spotify/api/artists')
 
     for album_json_path in glob.glob(os.path.join(src_dir_path, "*.json")):
         with open(album_json_path, "r") as artist_json:
@@ -77,7 +77,7 @@ def transform_artist_csv() -> None:
         artist_dict['type'].append(artist_api['type'])
     
     artist_df = pd.DataFrame(artist_dict, columns = columns)
-    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/artists/{US_DATE}')
+    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/artists/{US_DATE}')
     os.makedirs(dst_dir_path, exist_ok=True)
     dst_file_path = os.path.join(dst_dir_path, f"transform_artist.csv")
     artist_df.to_csv(dst_file_path, encoding='utf-8-sig', index=False)
@@ -97,7 +97,7 @@ def transform_track_artist_csv() -> None:
             track_artist_dict['spotify_artist_id'].append(artist_info['id'])
     
     track_artist_df = pd.DataFrame(track_artist_dict, columns = columns)
-    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track-artists/{US_DATE}')
+    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/track-artists/{US_DATE}')
     os.makedirs(dst_dir_path, exist_ok=True)
     dst_file_path = os.path.join(dst_dir_path, f"transform_track_artist.csv")
     track_artist_df.to_csv(dst_file_path, encoding='utf-8-sig',index=False)
@@ -132,7 +132,7 @@ def transform_track_chart_csv() -> None:
 
         concat_df = pd.concat([concat_df, df])
 
-    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track-charts/{US_DATE}')
+    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/track-charts/{US_DATE}')
     os.makedirs(dst_dir_path, exist_ok=True) 
 
 
@@ -144,35 +144,35 @@ def transform_track_chart_csv() -> None:
 
 
 def upload_transform_album_csv_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/albums/{US_DATE}')
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/albums/{US_DATE}')
     filenames = glob.glob(os.path.join(src_path, f"transform_album.csv"))
     keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
 
     common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
 
 def upload_transform_track_csv_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/tracks/{US_DATE}')
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/tracks/{US_DATE}')
     filenames = glob.glob(os.path.join(src_path, f"transform_track.csv"))
     keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
 
     common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
 
 def upload_transform_artist_csv_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/artists/{US_DATE}')
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/artists/{US_DATE}')
     filenames = glob.glob(os.path.join(src_path, f"transform_artist.csv"))
     keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
 
     common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
 
 def upload_transform_track_artist_csv_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track-artists{US_DATE}')
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/track-artists{US_DATE}')
     filenames = glob.glob(os.path.join(src_path, f"transform_track_artist.csv"))
     keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
 
     common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True)
 
 def upload_transform_track_chart_csv_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track-charts/{US_DATE}')
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/track-charts/{US_DATE}')
     filenames = glob.glob(os.path.join(src_path, f"transform_track_chart.csv"))
     keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
 

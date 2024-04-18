@@ -16,7 +16,7 @@ import glob
 import json
 
 from utils.constant_util import *
-from sql import album_sql, artist_sql, track_sql, track_chart_sql
+from sql import album_sql, artist_sql, track_sql, track_chart_sql, track_artist_sql
 
 def upload_to_s3(filename: str, key: str, bucket_name: str, replace: bool) -> None:
     hook = S3Hook("aws_s3")
@@ -55,9 +55,15 @@ with DAG(dag_id="upload_to_snowflake_dag",
         snowflake_conn_id='snowflake_default'
     )
 
+    load_track_artist_task = SnowflakeOperator(
+        task_id='load_track_artist_task',
+        sql=track_artist_sql.create_sql(US_DATE),
+        snowflake_conn_id='snowflake_default'
+    )
+
     end_task = EmptyOperator(
         task_id = "end_task"
     )
 
     start_task >> [load_album_task, load_artist_task, load_track_task] >> load_track_chart_task
-    load_track_chart_task >> end_task
+    load_track_chart_task >> load_track_artist_task >> end_task
