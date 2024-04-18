@@ -21,14 +21,14 @@ from utils import common_util
 
 def get_spotify_chart_urls() -> List:
     base_url = "https://charts.spotify.com/charts/view/"
-    spotify_charts_urls = [base_url + f'regional-{region}-daily/{NOW_DATE}' for region in REGIONS]
+    spotify_charts_urls = [base_url + f'regional-{region}-daily/{US_DATE}' for region in REGIONS]
 
     logging.info(spotify_charts_urls[0])
     return spotify_charts_urls
 
 
 def spotify_charts_csv() -> None:
-    src_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{NOW_DATE}')
+    src_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{US_DATE}')
 
     if not os.path.exists(src_path):
         os.makedirs(src_path)
@@ -87,7 +87,7 @@ def spotify_charts_csv() -> None:
 
 
 def load_spotify_charts_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{NOW_DATE}/*.csv')
+    src_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{US_DATE}/*.csv')
 
     filenames = glob.glob(src_path)
     keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]

@@ -33,25 +33,25 @@ with DAG(dag_id="upload_to_snowflake_dag",
 
     load_album_task = SnowflakeOperator(
         task_id='load_album_task',
-        sql=album_sql.sql,
+        sql=album_sql.create_sql(US_DATE),
         snowflake_conn_id='snowflake_default',
     )
 
     load_artist_task = SnowflakeOperator(
         task_id='load_artist_task',
-        sql=artist_sql.sql,
+        sql=artist_sql.create_sql(US_DATE),
         snowflake_conn_id='snowflake_default',
     )
 
     load_track_task = SnowflakeOperator(
         task_id='load_track_task',
-        sql=track_sql.sql,
+        sql=track_sql.create_sql(US_DATE),
         snowflake_conn_id='snowflake_default'
     )
 
     load_track_chart_task = SnowflakeOperator(
         task_id='load_track_chart_task',
-        sql=track_chart_sql.sql,
+        sql=track_chart_sql.create_sql(US_DATE),
         snowflake_conn_id='snowflake_default'
     )
 

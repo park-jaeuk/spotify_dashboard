@@ -16,6 +16,7 @@ import pendulum
 import glob
 import json
 import math
+import time
 from utils.constant_util import *
 from utils import common_util
 
@@ -29,31 +30,38 @@ def get_access_token(spotify_client_id: str, spotify_client_secret: str) -> str:
               }
     payload = {'grant_type': 'client_credentials'}
 
-    response = requests.post(endpoint, data=payload, headers=headers)
+    response = ""
+    while response == "":
+        try :
+            response = requests.post(endpoint, data=payload, headers=headers)
+        except :
+            print("Connection refused by the server, sleep for 5 seconds")
+            time.sleep(5)
+            continue
+
     access_token = response.json()['access_token']
     
     return access_token
 
 # snowflake에 있는지 확인할 track들에 list 모음 (merge into 실행하기)
-def get_spotify_track_api(src_path: str, idx:int , **context) -> None:
+def get_spotify_track_api(src_path: str, num_partition: int, idx:int, **context) -> None:
     csv_path = os.path.join(TRANSFORM_DIR, src_path)
     df = pd.read_csv(csv_path)
 
-    # 중복을 제거한 track spotify_id 리스트
-    partition = math.ceil(len(df) / 3)
+    # 분할한 task에 대한 파티션
+    partition = math.ceil(len(df) / num_partition)
     start, end = idx * partition, (idx + 1) * partition
     partition_df = df.iloc[start : end]
     logging.info("start idx: " + str(start))
     logging.info("end idx: "+ str(end))
 
+    # 중복을 제거한 track spotify_id 리스트
     spotify_track_id_list = list(set(partition_df['spotify_track_id'].to_list()))
 
     # 접근 토큰 가져오기
     access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
                                     spotify_client_secret=SPOTIFY_CLIENT_SECRETS[idx]) 
 
-    headers = {"Authorization": f"Bearer {access_token}"}
-    params = {"market": "US"}
     
     # 검색에 필요한 album_id와 artist_id 리스트에 삽입하기
     spotify_album_id_list = []
@@ -61,54 +69,92 @@ def get_spotify_track_api(src_path: str, idx:int , **context) -> None:
     
     tracks_dir = os.path.join(DOWNLOADS_DIR, f"spotify/api/tracks")
     os.makedirs(tracks_dir, exist_ok=True)  # exist_ok=True를 설정하면 디렉토리가 이미 존재할 경우 무시
-        
+    
     # 우선 market은 동일한 us로 설정(해당 market에서 사용 가능해야만 api 제공)
     # TODO: us에서도 못 듣는 track이라면 어떻게 해야될지 고민하기
-    for spotify_track_id in spotify_track_id_list:
+    headers = {"Authorization": f"Bearer {access_token}"}
+    params = {"market": "US"}
+
+    batch_size = math.ceil(len(spotify_track_id_list) / 20)
+
+    
+    for batch in range(batch_size):
+        partition_track_id_list = spotify_track_id_list[batch * 20 : (batch + 1) * 20]
+    
+        track_ids = ",".join(partition_track_id_list)
+
+        response = ""
+
+        while response == "":
+            try :
+                response = requests.get(f"https://api.spotify.com/v1/tracks?ids={track_ids}", 
+                                    params=params, headers=headers)
+            except :
+                print("Connection refused by the server, sleep for 5 seconds")
+                time.sleep(5)
+                continue
+
         
-        response = requests.get(f"https://api.spotify.com/v1/tracks/{spotify_track_id}", 
-                                params=params, headers=headers)
-        
-        # api 접근에 실패했다면 다시 접근
-        while response.status_code != 200:
-            access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
-                                    spotify_client_secret=SPOTIFY_CLIENT_SECRETS[idx]) 
+        track_jsons = response.json()['tracks']
+
+        for track_json in track_jsons:
+            spotify_track_id = track_json['id']
             
-            headers = {"Authorization": f"Bearer {access_token}"}
+            track_file_path = os.path.join(tracks_dir, f'{spotify_track_id}.json')
+            
+            # 앨범 id 추가
+            spotify_album_id_list.append(track_json['album']['id'])
 
-            response = requests.get(f"https://api.spotify.com/v1/tracks/{spotify_track_id}", 
-                params=params, headers=headers)
-       
-        track_json = response.json()
+            # 아티스트 id 추가
+            for artist_json in track_json['artists']:
+                spotify_artist_id_list.append(artist_json['id'])
+
+
+            with open(track_file_path, 'w') as f:
+                json.dump(track_json, f, indent=4)
         
-        # 앨범 id 추가
-        spotify_album_id_list.append(track_json['album']['id'])
+    context["ti"].xcom_push(key=f"spotify_album_id_list_{idx}", value=spotify_album_id_list)
+    context["ti"].xcom_push(key=f"spotify_artist_id_list_{idx}", value=spotify_artist_id_list)
 
-        for artist_json in track_json['artists']:
-            spotify_artist_id_list.append(artist_json['id'])
 
-        track_file_path = os.path.join(tracks_dir, f'{spotify_track_id}.json')
-        with open(track_file_path, 'w') as f:
-            json.dump(track_json, f, indent=4)
+def get_id_list(num_partition: int, **context) -> None:
+    spotify_album_id_list = []
+    spotify_artist_id_list = []
+
+    for idx in range(num_partition):
+        # length_album = len(context["ti"].xcom_pull(key=f"spotify_album_id_list_{idx}"))
+        # length_artist = len(context["ti"].xcom_pull(key=f"spotify_artist_id_list_{idx}"))
+
+        logging.info("album, artist")
+        logging.info(context['ti'].xcom_pull(key=f"spotify_album_id_list_{idx}"))
+        logging.info(context['ti'].xcom_pull(key=f"spotify_artist_id_list_{idx}"))
+        
+
+        spotify_album_id_list.extend(
+            context["ti"].xcom_pull(key=f"spotify_album_id_list_{idx}")
+        )
+
+        spotify_artist_id_list.extend(
+            context["ti"].xcom_pull(key=f"spotify_artist_id_list_{idx}")
+        )    
 
     spotify_album_id_list = list(set(spotify_album_id_list)) # 중복 제거
     spotify_artist_id_list = list(set(spotify_artist_id_list)) # 중복 제거
-
-    context["ti"].xcom_push(key="spotify_album_id_list", value=spotify_album_id_list)
-    context["ti"].xcom_push(key="spotify_artist_id_list", value=spotify_artist_id_list)
+    context["ti"].xcom_push(key=f"spotify_album_id_list", value=spotify_album_id_list)
+    context["ti"].xcom_push(key=f"spotify_artist_id_list", value=spotify_artist_id_list)
 
     logging.info("spotify_album_id_list length: " + str(len(spotify_album_id_list)))
     logging.info("spotify_artist_id_list length: " + str(len(spotify_artist_id_list)))
-    
-
 
 # snowflake에 있는지 확인할 album들에 list 모음 (merge into 실행하기)
-def get_spotify_album_api(idx:int, **context) -> None:
+def get_spotify_album_api(num_partition: int, idx:int, **context) -> None:
     spotify_album_id_list = context["ti"].xcom_pull(key="spotify_album_id_list")
-    partition = math.ceil(len(spotify_album_id_list) / 3)
+    partition = math.ceil(len(spotify_album_id_list) / num_partition)
 
     start, end = idx * partition, (idx + 1) * partition
     spotify_album_id_list = spotify_album_id_list[start:end]
+    logging.info("start: " + str(start))
+    logging.info("end: " + str(end))
 
     # 접근 토큰 가져오기
     access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
@@ -126,8 +172,18 @@ def get_spotify_album_api(idx:int, **context) -> None:
             
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        response = requests.get(f"https://api.spotify.com/v1/albums/{spotify_album_id}", 
+        response = ""
+
+        while response == "":
+            try :
+                response = requests.get(f"https://api.spotify.com/v1/albums/{spotify_album_id}", 
                         params=params, headers=headers)
+            except :
+                print("Connection refused by the server, sleep for 5 seconds")
+                time.sleep(5)
+                continue
+
+
         
         album_json = response.json()
 
@@ -136,13 +192,15 @@ def get_spotify_album_api(idx:int, **context) -> None:
             json.dump(album_json, f, indent=4)
 
 # snowflake에 있는지 확인할 artist들에 list 모음 (merge into 실행하기)
-def get_spotify_artist_api(idx:int, **context) -> None:
+def get_spotify_artist_api(num_partition: int, idx:int, **context) -> None:
     spotify_artist_id_list = context["ti"].xcom_pull(key="spotify_artist_id_list")
-    partition = math.ceil(len(spotify_artist_id_list) / 3)
+    partition = math.ceil(len(spotify_artist_id_list) / num_partition)
 
     start, end = idx * partition, (idx + 1) * partition
     spotify_artist_id_list = spotify_artist_id_list[start:end]
-
+    logging.info("start :", start)
+    logging.info("end :", end)
+    
     # 접근 토큰 가져오기
     access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
                                     spotify_client_secret=SPOTIFY_CLIENT_SECRETS[idx]) 
@@ -159,8 +217,17 @@ def get_spotify_artist_api(idx:int, **context) -> None:
             
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        response = requests.get(f"https://api.spotify.com/v1/artists/{spotify_artist_id}", 
+        response = ""
+
+        while response == "":
+            try :
+                response = requests.get(f"https://api.spotify.com/v1/artists/{spotify_artist_id}", 
                         params=params, headers=headers)
+            except :
+                print("Connection refused by the server, sleep for 5 seconds")
+                time.sleep(5)
+                continue
+  
         
         artist_json = response.json()
 
@@ -181,7 +248,7 @@ def load_spotify_api_to_s3(src_path: str, bucket_name: str) -> None:
 
 # TODO: S3에 담은 후에 삭제하는 거 추가하기
     
-
+NUM_PARTITION = 3
 
 with DAG(dag_id="spotify_api_dag",
          schedule_interval=None, # trigger DAG는 보통 None으로 처리 합니다.
@@ -193,12 +260,13 @@ with DAG(dag_id="spotify_api_dag",
     )
     
     with TaskGroup("spotify_track_group") as spotify_track_group:
-        for i in range(3):
+        for i in range(NUM_PARTITION):
             spotify_track_api_task = PythonOperator(
                 task_id=f"spotify_track_api_task_{i+1}",
                 python_callable=get_spotify_track_api,
                 op_kwargs={
-                    "src_path": f"spotify/charts/{NOW_DATE}/transform-concat-daily-{NOW_DATE}.csv",
+                    "num_partition": NUM_PARTITION,
+                    "src_path": f"spotify/charts/{US_DATE}/transform-concat-daily-{US_DATE}.csv",
                     "idx": i
                 }
             )
@@ -213,14 +281,24 @@ with DAG(dag_id="spotify_api_dag",
     )
  
     with TaskGroup("spotify_album_group") as spotify_album_group:
-        for i in range(3):
+        for i in range(NUM_PARTITION):
             spotify_album_api_task = PythonOperator(
                 task_id=f"spotify_album_api_task_{i+1}",
                 python_callable=get_spotify_album_api,
                 op_kwargs={
+                    "num_partition": NUM_PARTITION,
                     "idx": i
                 }
             )
+
+    get_id_list_task = PythonOperator(
+        task_id = "get_id_list_task",
+        python_callable=get_id_list,
+        op_kwargs={
+            "num_partition": NUM_PARTITION,
+        }
+    )
+    
 
     load_album_to_s3_task = PythonOperator(
         task_id="load_album_to_s3_task",
@@ -232,11 +310,12 @@ with DAG(dag_id="spotify_api_dag",
     )
 
     with TaskGroup("spotify_artist_group") as spotify_artist_group:
-        for i in range(3):
+        for i in range(NUM_PARTITION):
             spotify_album_api_task = PythonOperator(
                 task_id=f"spotify_artist_api_task_{i+1}",
                 python_callable=get_spotify_artist_api,
                 op_kwargs={
+                    "num_partition": NUM_PARTITION,
                     "idx": i
                 }
             )
@@ -250,30 +329,12 @@ with DAG(dag_id="spotify_api_dag",
         }
     )
 
-    # get_spotify_track_api_task = PythonOperator(
-    #     task_id="get_spotify_track_api_task",
-    #     python_callable=get_spotify_track_api,
-    #     op_kwargs={
-    #         "src_path": f"spotify/charts/{NOW_DATE}/transform-concat-daily-{NOW_DATE}.csv"
-    #     }
-    # )
-
-    # get_spotify_album_api_task = PythonOperator(
-    #     task_id="get_spotify_album_api_task",
-    #     python_callable=get_spotify_album_api
-    # )
-
-    # get_spotify_artist_api_task = PythonOperator(
-    #     task_id="get_spotify_artist_api_task",
-    #     python_callable=get_spotify_artist_api
-    # )
-
     end_task = EmptyOperator(
         task_id = "end_task"
     )
 
     start_task >> spotify_track_group >> load_track_to_s3_task
-    spotify_track_group >> spotify_album_group 
+    spotify_track_group >> get_id_list_task >>spotify_album_group 
 
     spotify_album_group >> load_album_to_s3_task
     spotify_album_group >> spotify_artist_group

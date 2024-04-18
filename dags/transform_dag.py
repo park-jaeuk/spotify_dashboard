@@ -34,9 +34,9 @@ def transform_track_csv() -> None:
         track_dict['duration_ms'].append(track_api['duration_ms'])
     
     track_df = pd.DataFrame(track_dict, columns = columns)
-    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/tracks/{NOW_DATE}')
+    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/tracks/{US_DATE}')
     os.makedirs(dst_dir_path, exist_ok=True)
-    dst_file_path = os.path.join(dst_dir_path, f"{NOW_DATE}_transform_track.csv")
+    dst_file_path = os.path.join(dst_dir_path, f"transform_track.csv")
     track_df.to_csv(dst_file_path, encoding='utf-8-sig',index=False)
 
 def transform_album_csv() -> None:
@@ -57,16 +57,16 @@ def transform_album_csv() -> None:
         album_dict['release_date_precision'].append(album_api['release_date_precision'])
     
     album_df = pd.DataFrame(album_dict, columns = columns)
-    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/albums/{NOW_DATE}')
+    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/albums/{US_DATE}')
     os.makedirs(dst_dir_path, exist_ok=True)
-    dst_file_path = os.path.join(dst_dir_path, f"{NOW_DATE}_transform_album.csv")
+    dst_file_path = os.path.join(dst_dir_path, f"transform_album.csv")
     album_df.to_csv(dst_file_path, encoding='utf-8-sig', index=False)
 
 def transform_artist_csv() -> None:
     columns = ['spotify_artist_id', 'name', 'type']
     artist_dict = {column: [] for column in columns}
 
-    src_dir_path = os.path.join(DOWNLOADS_DIR, f'spotify/api/artists')
+    src_dir_path = os.path.join(DOWNLOADS_DIR, f'spotify/artists')
 
     for album_json_path in glob.glob(os.path.join(src_dir_path, "*.json")):
         with open(album_json_path, "r") as artist_json:
@@ -77,14 +77,14 @@ def transform_artist_csv() -> None:
         artist_dict['type'].append(artist_api['type'])
     
     artist_df = pd.DataFrame(artist_dict, columns = columns)
-    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/artists/{NOW_DATE}')
+    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/artists/{US_DATE}')
     os.makedirs(dst_dir_path, exist_ok=True)
-    dst_file_path = os.path.join(dst_dir_path, f"{NOW_DATE}_transform_artist.csv")
+    dst_file_path = os.path.join(dst_dir_path, f"transform_artist.csv")
     artist_df.to_csv(dst_file_path, encoding='utf-8-sig', index=False)
 
 def transform_track_artist_csv() -> None:
-    columns = ['spotify_track_id', 'spotify_album_id']
-    track_dict = {column: [] for column in columns}
+    columns = ['spotify_track_id', 'spotify_artist_id']
+    track_artist_dict = {column: [] for column in columns}
 
     src_dir_path = os.path.join(DOWNLOADS_DIR, f'spotify/api/tracks')
 
@@ -92,18 +92,19 @@ def transform_track_artist_csv() -> None:
         with open(track_json_path, "r") as track_json:
             track_api = json.load(track_json)
 
-        track_dict['spotify_track_id'].append(track_api['id'])
-        track_dict['spotify_album_id'].append(track_api['album']['id'])
+        for artist_info in track_api['artists']:
+            track_artist_dict['spotify_track_id'].append(track_api['id'])
+            track_artist_dict['spotify_artist_id'].append(artist_info['id'])
     
-    track_df = pd.DataFrame(track_dict, columns = columns)
-    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track_artist/{NOW_DATE}')
+    track_artist_df = pd.DataFrame(track_artist_dict, columns = columns)
+    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track-artists/{US_DATE}')
     os.makedirs(dst_dir_path, exist_ok=True)
-    dst_file_path = os.path.join(dst_dir_path, f"{NOW_DATE}_transform_track.csv")
-    track_df.to_csv(dst_file_path, encoding='utf-8-sig',index=False)
+    dst_file_path = os.path.join(dst_dir_path, f"transform_track_artist.csv")
+    track_artist_df.to_csv(dst_file_path, encoding='utf-8-sig',index=False)
 
 def transform_track_chart_csv() -> None:
     # 트랙 테이블에서 spotify_id(외부 아이디)로 id 값을 가져와서 track_info 연결하기
-    src_dir_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{NOW_DATE}')
+    src_dir_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{US_DATE}')
     src_files = os.path.join(src_dir_path, "*.csv")
     
     columns = ['spotify_track_id', 'now_rank', 'peak_rank', 'previous_rank', 
@@ -131,11 +132,11 @@ def transform_track_chart_csv() -> None:
 
         concat_df = pd.concat([concat_df, df])
 
-    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track_chart/{NOW_DATE}')
+    dst_dir_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track-charts/{US_DATE}')
     os.makedirs(dst_dir_path, exist_ok=True) 
 
 
-    dst_file = os.path.join(dst_dir_path, f'{NOW_DATE}_track_chart.csv')
+    dst_file = os.path.join(dst_dir_path, f'transform_track_chart.csv')
     concat_df.to_csv(dst_file, index=False)
 
     logging.info(dst_file)
@@ -143,40 +144,39 @@ def transform_track_chart_csv() -> None:
 
 
 def upload_transform_album_csv_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/albums/{NOW_DATE}')
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/albums/{US_DATE}')
     filenames = glob.glob(os.path.join(src_path, f"transform_album.csv"))
     keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
 
-    common_util.upload_file_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
+    common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
 
 def upload_transform_track_csv_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/tracks/{NOW_DATE}')
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/tracks/{US_DATE}')
     filenames = glob.glob(os.path.join(src_path, f"transform_track.csv"))
     keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
 
-    common_util.upload_file_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
+    common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
 
 def upload_transform_artist_csv_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/artists/{NOW_DATE}')
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/artists/{US_DATE}')
     filenames = glob.glob(os.path.join(src_path, f"transform_artist.csv"))
     keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
 
-    common_util.upload_file_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
-
-
-def upload_transform_track_chart_csv_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track_chart/{NOW_DATE}')
-    filenames = glob.glob(os.path.join(src_path, f"{NOW_DATE}_track_chart.csv"))
-    keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
-
-    common_util.upload_file_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
+    common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
 
 def upload_transform_track_artist_csv_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track_chart/{NOW_DATE}')
-    filenames = glob.glob(os.path.join(src_path, f"{NOW_DATE}_track_artist.csv"))
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track-artists{US_DATE}')
+    filenames = glob.glob(os.path.join(src_path, f"transform_track_artist.csv"))
     keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
 
-    common_util.upload_file_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True)
+    common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True)
+
+def upload_transform_track_chart_csv_to_s3(bucket_name: str) -> None:
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/api/track-charts/{US_DATE}')
+    filenames = glob.glob(os.path.join(src_path, f"transform_track_chart.csv"))
+    keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
+
+    common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
 
 with DAG(dag_id="transform_dag",
          schedule_interval=None,
