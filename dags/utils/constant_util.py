@@ -29,5 +29,4 @@ TRANSFORM_DIR = os.path.join(AIRFLOW_HOME, 'transform')
 # NOW_DATE = datetime.now(tz=local_tz).strftime('%Y-%m-%d')
 # US_DATE = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
 # US_DATE = "2024-03-22"
-# NOW_DATE = "2024-03-22"
-NOW_DATE = "2024-03-11"
+US_DATE = "2024-03-11"
