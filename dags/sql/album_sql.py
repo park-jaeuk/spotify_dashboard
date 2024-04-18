@@ -16,33 +16,35 @@ commit = "COMMIT"
 # 따라서 현재 테스트 작업 중 일 때는 CREATE OR REPLACE를 실행 (기존 데이터가 사라짐)
 # 추후에 CREATE TABLE IF NOT EXISTS로 변경 예정
 
+def create_sql(date: str): 
+	sql = f"""
+	USE SCHEMA SPOTIFY_SCHEMA;
 
-sql = """
-USE SCHEMA SPOTIFY_SCHEMA;
+	CREATE OR REPLACE STAGE album_stage
+		STORAGE_INTEGRATION = s3_int
+		URL = 's3://airflow-gin-bucket/transform/spotify/albums/{date}/';
+		
+	CREATE OR REPLACE TABLE album (
+		id	bigint	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
+		spotify_album_id	varchar	NULL,
+		name	varchar	NULL,
+		total_tracks	int	NULL,
+		album_type	varchar	NULL,
+		release_date	datetime	NULL,
+		release_date_precision	varchar	NULL
+	);
 
-CREATE OR REPLACE STAGE album_stage
-    STORAGE_INTEGRATION = s3_int
-    URL = 's3://airflow-gin-bucket/transform/spotify/api/albums/2024-03-11/';
-    
-CREATE OR REPLACE TABLE album (
-	id	bigint	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-	spotify_id	varchar	NULL,
-	name	varchar	NULL,
-	total_tracks	int	NULL,
-	album_type	varchar	NULL,
-	release_date	datetime	NULL,
-	release_date_precision	varchar	NULL
-);
+	COPY INTO album (spotify_id, name, total_tracks, album_type, release_date, release_date_precision)
+	FROM (
+		SELECT $1spotify_id, $2name, $3total_tracks, $3album_type,
+			$5release_date, $6release_date_precision
+		FROM '@album_stage/transform_album.csv'
+	)
+	FILE_FORMAT = (TYPE = CSV, SKIP_HEADER = 1,
+		FIELD_OPTIONALLY_ENCLOSED_BY='"', ESCAPE_UNENCLOSED_FIELD = NONE)
+	ON_ERROR = 'ABORT_STATEMENT'; 
+			
+	COMMIT
+	"""
 
-COPY INTO album (spotify_id, name, total_tracks, album_type, release_date, release_date_precision)
-FROM (
-    SELECT $1spotify_id, $2name, $3total_tracks, $3album_type,
-        $5release_date, $6release_date_precision
-    FROM '@album_stage/transform_album.csv'
-)
-FILE_FORMAT = (TYPE = CSV, SKIP_HEADER = 1,
-    FIELD_OPTIONALLY_ENCLOSED_BY='"', ESCAPE_UNENCLOSED_FIELD = NONE)
-ON_ERROR = 'ABORT_STATEMENT'; 
-        
-COMMIT
-"""
+	return sql
