@@ -23,7 +23,7 @@ def create_sql(date: str):
 	FROM (
 	SELECT $1spotify_track_id, $2now_rank, $3peak_rank, $4previous_rank, 
 		$5total_days_on_chart, $6stream_count, $7region, $8chart_date
-	FROM '@track_chart_stage/transform-concat-daily-{date}.csv'
+	FROM '@track_chart_stage/transform_track_chart.csv'
 	)
 	FILE_FORMAT = (TYPE = CSV, SKIP_HEADER = 1,
 		FIELD_OPTIONALLY_ENCLOSED_BY='"', ESCAPE_UNENCLOSED_FIELD = NONE)

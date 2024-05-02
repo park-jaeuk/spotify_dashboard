@@ -4,7 +4,7 @@ def create_sql(date: str):
 
     CREATE OR REPLACE STAGE track_artist_stage
         STORAGE_INTEGRATION = s3_int
-        URL = 's3://airflow-gin-bucket/transform/spotify/track_artists/{date}/';
+        URL = 's3://airflow-gin-bucket/transform/spotify/track-artists/{date}/';
 
     CREATE OR REPLACE TABLE track_artist (
         id	BIGINT	NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
@@ -25,3 +25,4 @@ def create_sql(date: str):
             
     COMMIT
     """
+    return sql

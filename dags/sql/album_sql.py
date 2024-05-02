@@ -34,9 +34,9 @@ def create_sql(date: str):
 		release_date_precision	varchar	NULL
 	);
 
-	COPY INTO album (spotify_id, name, total_tracks, album_type, release_date, release_date_precision)
+	COPY INTO album (spotify_album_id, name, total_tracks, album_type, release_date, release_date_precision)
 	FROM (
-		SELECT $1spotify_id, $2name, $3total_tracks, $3album_type,
+		SELECT $1spotify_album_id, $2name, $3total_tracks, $4album_type,
 			$5release_date, $6release_date_precision
 		FROM '@album_stage/transform_album.csv'
 	)
