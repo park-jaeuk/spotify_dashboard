@@ -165,7 +165,7 @@ def upload_transform_artist_csv_to_s3(bucket_name: str) -> None:
     common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True) 
 
 def upload_transform_track_artist_csv_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(TRANSFORM_DIR, f'spotify/track-artists{US_DATE}')
+    src_path = os.path.join(TRANSFORM_DIR, f'spotify/track-artists/{US_DATE}')
     filenames = glob.glob(os.path.join(src_path, f"transform_track_artist.csv"))
     keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
 

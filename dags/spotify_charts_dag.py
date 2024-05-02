@@ -85,6 +85,50 @@ def spotify_charts_csv() -> None:
 
     driver.quit()
 
+def transform_and_concat_csv() -> None:
+    logging.info("transform and concat csv files")
+    # 트랙 테이블에서 spotify_id(외부 아이디)로 id 값을 가져와서 track_info 연결하기
+
+ 
+    src_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{US_DATE}')
+    src_files = os.path.join(src_path, "*.csv")
+
+
+    dst_path = os.path.join(TRANSFORM_DIR, f'spotify/charts/{US_DATE}')
+        
+    if not os.path.exists(dst_path):
+        os.makedirs(dst_path)
+
+    filenames = glob.glob(src_files)
+
+    save_columns = ['spotify_track_id', 'track_name', 'now_rank', 'peak_rank', 'previous_rank', 
+                'total_days_on_chart', 'stream_count', 'region', 'chart_date']
+    
+
+    transform_df = pd.DataFrame(columns = save_columns)
+    for filename in filenames:
+        df = pd.read_csv(filename)
+        df['spotify_track_id'] = df['uri'].str.split(':').str[-1]
+        df['chart_date'] = US_DATE
+        df['region'] = filename.split('/')[-1].split('-')[1] 
+
+        # 컬럼 이름 변경
+        rename_columns = {'rank' : 'now_rank', 'streams':'stream_count', 'days_on_chart':'total_days_on_chart'}
+        df.rename(columns = rename_columns, inplace = True)
+
+        # 필요없는 삭제 및 컬럼 순서 변경
+        df = df[save_columns]
+
+
+        logging.info(len(df))
+    
+        transform_df = pd.concat([transform_df, df])
+
+    dst_file = os.path.join(dst_path, f'transform-concat-daily-{US_DATE}.csv')
+    transform_df.to_csv(dst_file, encoding='utf-8', index=False)
+
+    logging.info(dst_file)
+    logging.info(len(transform_df))
 
 def load_spotify_charts_to_s3(bucket_name: str) -> None:
     src_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{US_DATE}/*.csv')
@@ -95,6 +139,8 @@ def load_spotify_charts_to_s3(bucket_name: str) -> None:
     logging.info(keys[0])
 
     common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True)
+
+
 
 with DAG(dag_id="spotify_charts_dag",
          schedule_interval="@daily",
@@ -110,6 +156,11 @@ with DAG(dag_id="spotify_charts_dag",
         python_callable=spotify_charts_csv
     )
     
+    transform_and_concat_csv_task = PythonOperator(
+        task_id="transform_and_concat_csv_task",
+        python_callable=transform_and_concat_csv
+    )
+
     load_spotify_charts_to_s3_task = PythonOperator(
         task_id = "load_spotify_charts_to_s3_task",
         python_callable= load_spotify_charts_to_s3,
@@ -135,8 +186,7 @@ with DAG(dag_id="spotify_charts_dag",
         task_id = "end_task"
     )
 
-    # start_task >> upload_raw_files_to_s3_task >> end_task
-
-    # start_task >> transform_and_concat_csv_task >> call_trigger_task >> end_task
-
-    start_task >> spotify_charts_csv_task >> load_spotify_charts_to_s3_task >> end_task
+    start_task >> spotify_charts_csv_task >> transform_and_concat_csv_task 
+    transform_and_concat_csv_task >> load_spotify_charts_to_s3_task 
+    
+    load_spotify_charts_to_s3_task >> call_trigger_task >> end_task

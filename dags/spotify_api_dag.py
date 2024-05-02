@@ -1,5 +1,6 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.models.variable import Variable
@@ -19,6 +20,8 @@ import math
 import time
 from utils.constant_util import *
 from utils import common_util
+
+
 
 def get_access_token(spotify_client_id: str, spotify_client_secret: str) -> str:
     endpoint = 'https://accounts.spotify.com/api/token'
@@ -122,9 +125,6 @@ def get_id_list(num_partition: int, **context) -> None:
     spotify_artist_id_list = []
 
     for idx in range(num_partition):
-        # length_album = len(context["ti"].xcom_pull(key=f"spotify_album_id_list_{idx}"))
-        # length_artist = len(context["ti"].xcom_pull(key=f"spotify_artist_id_list_{idx}"))
-
         logging.info("album, artist")
         logging.info(context['ti'].xcom_pull(key=f"spotify_album_id_list_{idx}"))
         logging.info(context['ti'].xcom_pull(key=f"spotify_artist_id_list_{idx}"))
@@ -166,31 +166,45 @@ def get_spotify_album_api(num_partition: int, idx:int, **context) -> None:
     albums_dir = os.path.join(DOWNLOADS_DIR, f"spotify/api/albums")
     os.makedirs(albums_dir, exist_ok=True)  # exist_ok=True를 설정하면 디렉토리가 이미 존재할 경우 무시
     
-    for spotify_album_id in spotify_album_id_list:
-        access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
-                                    spotify_client_secret=SPOTIFY_CLIENT_SECRETS[idx]) 
-            
-        headers = {"Authorization": f"Bearer {access_token}"}
+    batch_size = math.ceil(len(spotify_album_id_list) / 20)
+    
+    for batch in range(batch_size):
+        partition_album_id_list = spotify_album_id_list[batch * 20 : (batch + 1) * 20]
+    
+        album_ids = ",".join(partition_album_id_list)
 
         response = ""
 
         while response == "":
             try :
-                response = requests.get(f"https://api.spotify.com/v1/albums/{spotify_album_id}", 
-                        params=params, headers=headers)
+                response = requests.get(f"https://api.spotify.com/v1/albums?ids={album_ids}", 
+                                    params=params, headers=headers)
             except :
                 print("Connection refused by the server, sleep for 5 seconds")
                 time.sleep(5)
                 continue
-
-
         
-        album_json = response.json()
+        album_jsons = response.json()['albums']
 
-        album_file_path = os.path.join(albums_dir, f'{spotify_album_id}.json')
-        with open(album_file_path, 'w') as f:
-            json.dump(album_json, f, indent=4)
+        for album_json, album_id in zip(album_jsons, album_ids):
+            
+            while 'error' in album_json.keys():
+                try :
+                    response = requests.get(f"https://api.spotify.com/v1/albums/{album_id}", 
+                                    params=params, headers=headers)
+                    album_json = response.json()
+                except :
+                    print("Connection refused by the server, sleep for 5 seconds")
+                    time.sleep(5)
+                    continue
 
+            spotify_album_id = album_json['id']
+            
+            album_file_path = os.path.join(albums_dir, f'{spotify_album_id}.json')
+            
+            with open(album_file_path, 'w') as f:
+                json.dump(album_json, f, indent=4)
+    
 # snowflake에 있는지 확인할 artist들에 list 모음 (merge into 실행하기)
 def get_spotify_artist_api(num_partition: int, idx:int, **context) -> None:
     spotify_artist_id_list = context["ti"].xcom_pull(key="spotify_artist_id_list")
@@ -211,32 +225,69 @@ def get_spotify_artist_api(num_partition: int, idx:int, **context) -> None:
     artists_dir = os.path.join(DOWNLOADS_DIR, f"spotify/api/artists")
     os.makedirs(artists_dir, exist_ok=True)  # exist_ok=True를 설정하면 디렉토리가 이미 존재할 경우 무시
     
-    for spotify_artist_id in spotify_artist_id_list:
-        access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
-                                    spotify_client_secret=SPOTIFY_CLIENT_SECRETS[idx]) 
-            
-        headers = {"Authorization": f"Bearer {access_token}"}
+    batch_size = math.ceil(len(spotify_artist_id_list) / 20)
+    
+    for batch in range(batch_size):
+        partition_artist_id_list = spotify_artist_id_list[batch * 20 : (batch + 1) * 20]
+    
+        artist_ids = ",".join(partition_artist_id_list)
 
         response = ""
 
         while response == "":
             try :
-                response = requests.get(f"https://api.spotify.com/v1/artists/{spotify_artist_id}", 
-                        params=params, headers=headers)
+                response = requests.get(f"https://api.spotify.com/v1/artists?ids={artist_ids}", 
+                                    params=params, headers=headers)
             except :
                 print("Connection refused by the server, sleep for 5 seconds")
                 time.sleep(5)
                 continue
+        
+        artist_jsons = response.json()['artists']
+
+        for artist_json, artist_id in zip(artist_jsons, artist_ids):
+            
+            while 'error' in artist_json.keys():
+                try :
+                    response = requests.get(f"https://api.spotify.com/v1/artists/{artist_id}", 
+                                    params=params, headers=headers)
+                    artist_json = response.json()
+                except :
+                    print("Connection refused by the server, sleep for 5 seconds")
+                    time.sleep(5)
+                    continue
+
+            spotify_artist_id = artist_json['id']
+            
+            artist_file_path = os.path.join(artists_dir, f'{spotify_artist_id}.json')
+            
+            with open(artist_file_path, 'w') as f:
+                json.dump(artist_json, f, indent=4)
+
+    # for spotify_artist_id in spotify_artist_id_list:
+    #     access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
+    #                                 spotify_client_secret=SPOTIFY_CLIENT_SECRETS[idx]) 
+            
+    #     headers = {"Authorization": f"Bearer {access_token}"}
+
+    #     response = ""
+
+    #     while response == "":
+    #         try :
+    #             response = requests.get(f"https://api.spotify.com/v1/artists/{spotify_artist_id}", 
+    #                     params=params, headers=headers)
+    #         except :
+    #             print("Connection refused by the server, sleep for 5 seconds")
+    #             time.sleep(5)
+    #             continue
   
         
-        artist_json = response.json()
+    #     artist_json = response.json()
 
-        artist_file_path = os.path.join(artists_dir, f'{spotify_artist_id}.json')
-        with open(artist_file_path, 'w') as f:
-            json.dump(artist_json, f, indent=4)
+    #     artist_file_path = os.path.join(artists_dir, f'{spotify_artist_id}.json')
+    #     with open(artist_file_path, 'w') as f:
+    #         json.dump(artist_json, f, indent=4)
 
-
-# TODO: api S3에 담는거 추가하기
 def load_spotify_api_to_s3(src_path: str, bucket_name: str) -> None:
     src_files_path = os.path.join(DOWNLOADS_DIR, src_path)
 
@@ -245,6 +296,8 @@ def load_spotify_api_to_s3(src_path: str, bucket_name: str) -> None:
     logging.info(filenames[0])
     logging.info(keys[0])
     common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True)
+
+# TODO: 현재 S3에 존재하는지 
 
 # TODO: S3에 담은 후에 삭제하는 거 추가하기
     
@@ -329,6 +382,18 @@ with DAG(dag_id="spotify_api_dag",
         }
     )
 
+    call_trigger_task = TriggerDagRunOperator(
+        task_id='call_trigger',
+        trigger_dag_id='transform_dag',
+        trigger_run_id=None,
+        execution_date=None,
+        reset_dag_run=False,
+        wait_for_completion=False,
+        poke_interval=60,
+        allowed_states=["success"],
+        failed_states=None,
+    )
+
     end_task = EmptyOperator(
         task_id = "end_task"
     )
@@ -340,4 +405,4 @@ with DAG(dag_id="spotify_api_dag",
     spotify_album_group >> spotify_artist_group
 
     spotify_artist_group >> load_artist_to_s3_task
-    load_artist_to_s3_task >> end_task
+    load_artist_to_s3_task >> call_trigger_task >> end_task
