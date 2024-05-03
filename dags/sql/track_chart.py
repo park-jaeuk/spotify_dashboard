@@ -1,0 +1,40 @@
+select_track_chart = """
+USE SCHEMA PUBLIC;
+
+CREATE OR REPLACE TABLE track_chart(
+    id bigint NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
+    spotify_track_id varchar NULL,
+    now_rank int NULL,
+    peak_rank int NULL,
+    previous_rank int NULL,
+    total_days_on_chart int NULL,
+    stream_count bigint NULL,
+    region varchar NULL,
+    chart_date date NULL 
+);
+
+
+CREATE OR REPLACE FILE FORMAT my_csv_format
+    TYPE = 'CSV'
+    FIELD_DELIMITER = ','
+    FIELD_OPTIONALLY_ENCLOSED_BY = '"'
+    SKIP_HEADER = 1;
+
+
+CREATE OR REPLACE STAGE track_chart_stage
+    STORAGE_INTEGRATION = spotify_api_to_snowflake
+    URL = 's3://demobyjay/transform/spotify/api/track_chart/'
+    FILE_FORMAT = my_csv_format;
+
+
+
+COPY INTO SPOTIFY.PUBLIC.TRACK_CHART (spotify_track_id, now_rank, peak_rank, previous_rank, total_days_on_chart, stream_count, region, chart_date) 
+FROM (
+    SELECT $1spotify_track_id, $2now_rank, $3peak_rank, $4previous_rank, $5total_days_on_chart, $6region, $7stream_count,               $8chart_date
+    FROM '@track_chart_stage'
+)
+FILE_FORMAT = my_csv_format
+ON_ERROR = 'ABORT_STATEMENT'; 
+
+
+"""
