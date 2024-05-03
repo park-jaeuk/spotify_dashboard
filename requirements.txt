@@ -2,3 +2,4 @@ pandas==2.1.2
 numpy==1.25.2
 selenium==4.17.2
 pyOpenSSL==24.1.0
+webdriver-manager==3.5.2
