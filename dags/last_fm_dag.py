@@ -304,4 +304,4 @@ with DAG(dag_id="last_fm_dag",
 
     # start_task >> transform_and_concat_csv_task >> call_trigger_task >> end_task
 
-    start_task >>select_track_task >> select_artist_task >> select_spotify_track_id_task >> last_fm_to_json_task >> upload_raw_files_to_s3_task >> end_task
+    start_task >>[select_track_task, select_artist_task, select_spotify_track_id_task] >> last_fm_to_json_task >> upload_raw_files_to_s3_task >> end_task
