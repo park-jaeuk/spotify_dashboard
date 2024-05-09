@@ -16,8 +16,8 @@ def select_track_artist(bucket_name: str, date: str=None) :
 
 
     CREATE OR REPLACE STAGE track_artist_stage
-        STORAGE_INTEGRATION = spotify_api_to_snowflake
-        URL = 's3://{bucket_name}/transform/spotify/api/track_artist/'
+        STORAGE_INTEGRATION = s3_int
+        URL = 's3://{bucket_name}/transform/spotify/track-artist/{date}/'
         FILE_FORMAT = my_csv_format;
 
 

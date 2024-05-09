@@ -19,7 +19,7 @@ def select_information (bucket_name: str, date: str=None) :
         SKIP_HEADER = 1;
 
     CREATE OR REPLACE STAGE information_stage
-        STORAGE_INTEGRATION = spotify_api_to_snowflake
+        STORAGE_INTEGRATION = s3_int
         URL = 's3://{bucket_name}/transform/last_fm/information/'
         FILE_FORMAT = my_csv_format;
         

@@ -18,8 +18,8 @@ def select_track(bucket_name: str, date: str=None) :
         SKIP_HEADER = 1;
 
     CREATE OR REPLACE STAGE track_stage
-        STORAGE_INTEGRATION = spotify_api_to_snowflake
-        URL = 's3://{bucket_name}/transform/spotify/api/tracks/'
+        STORAGE_INTEGRATION = s3_int
+        URL = 's3://{bucket_name}/transform/spotify/tracks/{date}/'
         FILE_FORMAT = my_csv_format;
 
     COPY INTO SPOTIFY.PUBLIC.TRACK (spotify_track_id, spotify_album_id, name, duration_ms) 

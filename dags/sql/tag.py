@@ -16,7 +16,7 @@ def select_tag(bucket_name: str, date: str=None) :
 
 
     CREATE OR REPLACE STAGE tags_stage
-        STORAGE_INTEGRATION = spotify_api_to_snowflake
+        STORAGE_INTEGRATION = s3_int
         URL = 's3://{bucket_name}/transform/last_fm/tags/'
         FILE_FORMAT = my_csv_format;
 

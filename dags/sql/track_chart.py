@@ -23,8 +23,8 @@ def select_track_chart(bucket_name: str, date: str=None) :
 
 
     CREATE OR REPLACE STAGE track_chart_stage
-        STORAGE_INTEGRATION = spotify_api_to_snowflake
-        URL = 's3://{bucket_name}/transform/spotify/api/track_chart/'
+        STORAGE_INTEGRATION = s3_int
+        URL = 's3://{bucket_name}/transform/spotify/track-charts/{date}/'
         FILE_FORMAT = my_csv_format;
 
     COPY INTO SPOTIFY.PUBLIC.TRACK_CHART (spotify_track_id, now_rank, peak_rank, previous_rank, total_days_on_chart, stream_count, region, chart_date) 
