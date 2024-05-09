@@ -5,6 +5,7 @@ from airflow.providers.snowflake.operators.snowflake import SnowflakeOperator
 from datetime import datetime
 import pandas as pd
 from typing import List, Tuple
+from utils import constant_util
 
 from sql import album
 from sql import artist
@@ -27,49 +28,49 @@ with DAG(dag_id="upload_to_snowflake_dag",
 
     load_album_task = SnowflakeOperator(
         task_id='load_album_task',
-        sql=album.select_album,
+        sql=album.select_album(constant_util.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake',
     )
 
     load_artist_task = SnowflakeOperator(
         task_id='load_artist_task',
-        sql=artist.select_artist,
+        sql=artist.select_artist(constant_util.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake',
     )
 
     load_information_task = SnowflakeOperator(
         task_id='load_information_task',
-        sql=information.select_information,
+        sql=information.select_information(constant_util.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake',
     )
 
     load_review_task = SnowflakeOperator(
         task_id='load_review_task',
-        sql=review.select_review,
+        sql=review.select_review(constant_util.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake',
     )
 
     load_tag_task = SnowflakeOperator(
         task_id='load_tag_task',
-        sql=tag.select_tag,
+        sql=tag.select_tag(constant_util.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake',
     )
 
     load_track_artist_task = SnowflakeOperator(
         task_id='load_track_artist_task',
-        sql=track_artist.select_track_artist,
+        sql=track_artist.select_track_artist(constant_util.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake',
     )
 
     load_track_chart_task = SnowflakeOperator(
         task_id='load_track_chart_task',
-        sql=track_chart.select_track_chart,
+        sql=track_chart.select_track_chart(constant_util.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake',
     )
 
     load_track_task = SnowflakeOperator(
         task_id='load_track_task',
-        sql=track.select_track,
+        sql=track.select_track(constant_util.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake',
     )
 
@@ -77,4 +78,5 @@ with DAG(dag_id="upload_to_snowflake_dag",
         task_id = "end_task"
     )
 
-    start_task >> [load_album_task, load_artist_task, load_information_task, load_review_task, load_tag_task, load_track_artist_task, load_track_chart_task, load_track_task] >> end_task
+    start_task >> [load_album_task, load_artist_task, load_information_task, load_review_task, 
+                   load_tag_task, load_track_artist_task, load_track_chart_task, load_track_task] >> end_task
