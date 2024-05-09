@@ -55,12 +55,12 @@ def upload_files_to_s3(filenames: List, keys: List, bucket_name: str, replace: b
         hook.load_file(filename=filename, key=key, bucket_name=bucket_name, replace=replace)
 
 
-def get_new_keys(bucket_name: str):
+def get_new_keys(bucket_name: str, table: str):
     """S3 버킷에서 특정 경로의 파일 목록을 가져옵니다."""
     # S3Hook 인스턴스 생성, Airflow Connection ID 지정
     s3_hook = S3Hook(aws_conn_id='aws_s3')
     
     # 버킷 내 파일 목록 조회
-    files = s3_hook.list_keys(bucket_name=bucket_name, prefix='downloads/spotify/api/tracks')
+    files = s3_hook.list_keys(bucket_name=bucket_name, prefix=f'downloads/spotify/api/{table}')
     s3_keys = [file.split('/')[-1][:-5] for file in files[1:]]
     return s3_keys
