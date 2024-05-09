@@ -62,8 +62,8 @@ def get_spotify_track_api(src_path: str, num_partition: int, idx:int, **context)
     # 중복을 제거한 track spotify_id 리스트
     spotify_track_id_list = list(set(partition_df['spotify_track_id'].to_list()))
 
-    spotify_track_id_list = list(set(spotify_track_id_list) - set(common_util.get_new_keys(BUCKET_NAME)))
-    logging.info(spotify_track_id_list)
+    spotify_track_id_list = list(set(spotify_track_id_list) - set(common_util.get_new_keys(BUCKET_NAME, 'tracks')))
+    logging.info(f"the number of new track : {len(spotify_track_id_list)}")
 
     # 접근 토큰 가져오기
     access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
@@ -142,8 +142,11 @@ def get_id_list(num_partition: int, **context) -> None:
             context["ti"].xcom_pull(key=f"spotify_artist_id_list_{idx}")
         )    
 
-    spotify_album_id_list = list(set(spotify_album_id_list)) # 중복 제거
-    spotify_artist_id_list = list(set(spotify_artist_id_list)) # 중복 제거
+    spotify_album_id_list = list(set(spotify_album_id_list) - set(common_util.get_new_keys(BUCKET_NAME, 'albums'))) # 중복 제거
+    spotify_artist_id_list = list(set(spotify_artist_id_list) - set(common_util.get_new_keys(BUCKET_NAME, 'artists'))) # 중복 제거
+    logging.info(f'the number of new album : f{spotify_album_id_list}')
+    logging.info(f'the number of new artist : f{spotify_artist_id_list}')
+
     context["ti"].xcom_push(key=f"spotify_album_id_list", value=spotify_album_id_list)
     context["ti"].xcom_push(key=f"spotify_artist_id_list", value=spotify_artist_id_list)
 
