@@ -15,7 +15,7 @@ import glob
 import json
 import math
 import time
-from utils.constant_util import *
+from utils import constant_util
 from utils import common_util
 
 
@@ -45,7 +45,7 @@ def get_access_token(spotify_client_id: str, spotify_client_secret: str) -> str:
 
 # snowflake에 있는지 확인할 track들에 list 모음 (merge into 실행하기)
 def get_spotify_track_api(src_path: str, num_partition: int, idx:int, **context) -> None:
-    csv_path = os.path.join(TRANSFORM_DIR, src_path)
+    csv_path = os.path.join(constant_util.TRANSFORM_DIR, src_path)
     df = pd.read_csv(csv_path)
 
     # 분할한 task에 대한 파티션
@@ -59,15 +59,15 @@ def get_spotify_track_api(src_path: str, num_partition: int, idx:int, **context)
     spotify_track_id_list = list(set(partition_df['spotify_track_id'].to_list()))
 
     # 접근 토큰 가져오기
-    access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
-                                    spotify_client_secret=SPOTIFY_CLIENT_SECRETS[idx]) 
+    access_token = get_access_token(spotify_client_id=constant_util.SPOTIFY_CLIENT_IDS[idx], 
+                                    spotify_client_secret=constant_util.SPOTIFY_CLIENT_SECRETS[idx]) 
 
     
     # 검색에 필요한 album_id와 artist_id 리스트에 삽입하기
     spotify_album_id_list = []
     spotify_artist_id_list = []
     
-    tracks_dir = os.path.join(DOWNLOADS_DIR, f"spotify/api/tracks")
+    tracks_dir = os.path.join(constant_util.DOWNLOADS_DIR, f"spotify/api/tracks")
     os.makedirs(tracks_dir, exist_ok=True)  # exist_ok=True를 설정하면 디렉토리가 이미 존재할 경우 무시
     
     # 우선 market은 동일한 us로 설정(해당 market에서 사용 가능해야만 api 제공)
@@ -154,13 +154,13 @@ def get_spotify_album_api(num_partition: int, idx:int, **context) -> None:
     logging.info("end: " + str(end))
 
     # 접근 토큰 가져오기
-    access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
-                                    spotify_client_secret=SPOTIFY_CLIENT_SECRETS[idx]) 
+    access_token = get_access_token(spotify_client_id=constant_util.SPOTIFY_CLIENT_IDS[idx], 
+                                    spotify_client_secret=constant_util.SPOTIFY_CLIENT_SECRETS[idx]) 
 
     headers = {"Authorization": f"Bearer {access_token}"}
     params = {"market": "US"}
 
-    albums_dir = os.path.join(DOWNLOADS_DIR, f"spotify/api/albums")
+    albums_dir = os.path.join(constant_util.DOWNLOADS_DIR, f"spotify/api/albums")
     os.makedirs(albums_dir, exist_ok=True)  # exist_ok=True를 설정하면 디렉토리가 이미 존재할 경우 무시
     
     batch_size = math.ceil(len(spotify_album_id_list) / 20)
@@ -213,13 +213,13 @@ def get_spotify_artist_api(num_partition: int, idx:int, **context) -> None:
     logging.info("end :", end)
     
     # 접근 토큰 가져오기
-    access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
-                                    spotify_client_secret=SPOTIFY_CLIENT_SECRETS[idx]) 
+    access_token = get_access_token(spotify_client_id=constant_util.SPOTIFY_CLIENT_IDS[idx], 
+                                    spotify_client_secret=constant_util.SPOTIFY_CLIENT_SECRETS[idx]) 
 
     headers = {"Authorization": f"Bearer {access_token}"}
     params = {"market": "US"}
 
-    artists_dir = os.path.join(DOWNLOADS_DIR, f"spotify/api/artists")
+    artists_dir = os.path.join(constant_util.DOWNLOADS_DIR, f"spotify/api/artists")
     os.makedirs(artists_dir, exist_ok=True)  # exist_ok=True를 설정하면 디렉토리가 이미 존재할 경우 무시
     
     batch_size = math.ceil(len(spotify_artist_id_list) / 20)
@@ -262,10 +262,10 @@ def get_spotify_artist_api(num_partition: int, idx:int, **context) -> None:
                 json.dump(artist_json, f, indent=4)
 
 def load_spotify_api_to_s3(src_path: str, bucket_name: str) -> None:
-    src_files_path = os.path.join(DOWNLOADS_DIR, src_path)
+    src_files_path = os.path.join(constant_util.DOWNLOADS_DIR, src_path)
 
     filenames = glob.glob(src_files_path)
-    keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
+    keys = [filename.replace(constant_util.AIRFLOW_HOME, "")[1:] for filename in filenames]
     logging.info(filenames[0])
     logging.info(keys[0])
     common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True)
@@ -292,7 +292,7 @@ with DAG(dag_id="spotify_api_dag",
                 python_callable=get_spotify_track_api,
                 op_kwargs={
                     "num_partition": NUM_PARTITION,
-                    "src_path": f"spotify/charts/{US_DATE}/transform-concat-daily-{US_DATE}.csv",
+                    "src_path": f"spotify/charts/{constant_util.US_DATE}/transform-concat-daily-{constant_util.US_DATE}.csv",
                     "idx": i
                 }
             )
@@ -302,7 +302,7 @@ with DAG(dag_id="spotify_api_dag",
         python_callable=load_spotify_api_to_s3,
         op_kwargs={
             "src_path": f'spotify/api/tracks/*.json',
-            "bucket_name": BUCKET_NAME
+            "bucket_name": constant_util.BUCKET_NAME
         }
     )
  
@@ -331,7 +331,7 @@ with DAG(dag_id="spotify_api_dag",
         python_callable=load_spotify_api_to_s3,
         op_kwargs={
             "src_path": f'spotify/api/albums/*.json',
-            "bucket_name": BUCKET_NAME
+            "bucket_name": constant_util.BUCKET_NAME
         }
     )
 
@@ -351,7 +351,7 @@ with DAG(dag_id="spotify_api_dag",
         python_callable=load_spotify_api_to_s3,
         op_kwargs={
             "src_path": f'spotify/api/artists/*.json',
-            "bucket_name": BUCKET_NAME
+            "bucket_name": constant_util.BUCKET_NAME
         }
     )
 

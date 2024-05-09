@@ -29,9 +29,6 @@ import json
 from urllib.parse import quote
 from datetime import datetime
 
-from sql import album
-from sql import artist
-from sql import track
 from sql import url
 from utils import common_util
 from utils import constant_util
