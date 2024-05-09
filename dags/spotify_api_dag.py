@@ -18,6 +18,7 @@ import glob
 import json
 import math
 import time
+import boto3
 from utils.constant_util import *
 from utils import common_util
 
@@ -60,6 +61,9 @@ def get_spotify_track_api(src_path: str, num_partition: int, idx:int, **context)
 
     # 중복을 제거한 track spotify_id 리스트
     spotify_track_id_list = list(set(partition_df['spotify_track_id'].to_list()))
+
+    spotify_track_id_list = list(set(spotify_track_id_list) - set(common_util.get_new_keys(BUCKET_NAME)))
+    logging.info(spotify_track_id_list)
 
     # 접근 토큰 가져오기
     access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
@@ -384,7 +388,7 @@ with DAG(dag_id="spotify_api_dag",
 
     call_trigger_task = TriggerDagRunOperator(
         task_id='call_trigger',
-        trigger_dag_id='transform_dag',
+        trigger_dag_id='last_fm_dag',
         trigger_run_id=None,
         execution_date=None,
         reset_dag_run=False,
