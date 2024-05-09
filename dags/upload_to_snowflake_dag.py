@@ -1,20 +1,10 @@
 from airflow import DAG
-from airflow.operators.python import PythonOperator
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.trigger_dagrun import TriggerDagRunOperator
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.snowflake.operators.snowflake import SnowflakeOperator
-from airflow.models.variable import Variable
 
 from datetime import datetime
 import pandas as pd
 from typing import List, Tuple
-import logging
-import os
-import pendulum
-import glob
-import json
-import sys
 
 from sql import album
 from sql import artist

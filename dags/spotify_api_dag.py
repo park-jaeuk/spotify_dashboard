@@ -2,8 +2,6 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.operators.empty import EmptyOperator
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from airflow.models.variable import Variable
 from airflow.utils.task_group import TaskGroup
 
 from datetime import datetime
@@ -13,7 +11,6 @@ import logging
 import os
 import base64
 import requests
-import pendulum
 import glob
 import json
 import math
@@ -263,30 +260,6 @@ def get_spotify_artist_api(num_partition: int, idx:int, **context) -> None:
             
             with open(artist_file_path, 'w') as f:
                 json.dump(artist_json, f, indent=4)
-
-    # for spotify_artist_id in spotify_artist_id_list:
-    #     access_token = get_access_token(spotify_client_id=SPOTIFY_CLIENT_IDS[idx], 
-    #                                 spotify_client_secret=SPOTIFY_CLIENT_SECRETS[idx]) 
-            
-    #     headers = {"Authorization": f"Bearer {access_token}"}
-
-    #     response = ""
-
-    #     while response == "":
-    #         try :
-    #             response = requests.get(f"https://api.spotify.com/v1/artists/{spotify_artist_id}", 
-    #                     params=params, headers=headers)
-    #         except :
-    #             print("Connection refused by the server, sleep for 5 seconds")
-    #             time.sleep(5)
-    #             continue
-  
-        
-    #     artist_json = response.json()
-
-    #     artist_file_path = os.path.join(artists_dir, f'{spotify_artist_id}.json')
-    #     with open(artist_file_path, 'w') as f:
-    #         json.dump(artist_json, f, indent=4)
 
 def load_spotify_api_to_s3(src_path: str, bucket_name: str) -> None:
     src_files_path = os.path.join(DOWNLOADS_DIR, src_path)

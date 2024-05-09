@@ -2,7 +2,6 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -14,7 +13,6 @@ import pandas as pd
 from typing import List, Tuple
 import logging
 import os
-import pendulum
 import glob
 from utils.constant_util import *
 from utils import common_util
