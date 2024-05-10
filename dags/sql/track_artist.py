@@ -17,7 +17,7 @@ def select_track_artist(bucket_name: str, date: str=None) :
 
     CREATE OR REPLACE STAGE track_artist_stage
         STORAGE_INTEGRATION = s3_int
-        URL = 's3://{bucket_name}/transform/spotify/track-artist/{date}/'
+        URL = 's3://{bucket_name}/transform/spotify/track-artists/{date}/'
         FILE_FORMAT = my_csv_format;
 
 
