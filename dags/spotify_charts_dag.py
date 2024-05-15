@@ -141,7 +141,7 @@ def load_spotify_charts_to_s3(bucket_name: str) -> None:
 
 
 with DAG(dag_id="spotify_charts_dag",
-         schedule_interval="@daily",
+         schedule_interval=None,
          start_date=datetime(2024, 1, 1),
          catchup=False) :
     

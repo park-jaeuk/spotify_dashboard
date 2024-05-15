@@ -382,8 +382,8 @@ with DAG(dag_id="transform_dag",
     )
 
 
-    trigger_upload_to_snowflake_task = TriggerDagRunOperator(
-        task_id='trigger_upload_to_snowflake_task',
+    call_trigger_task = TriggerDagRunOperator(
+        task_id='call_trigger_task',
         trigger_dag_id='upload_to_snowflake_dag',
         trigger_run_id=None,
         execution_date=None,
@@ -417,8 +417,8 @@ with DAG(dag_id="transform_dag",
     transform_information_csv_task >> upload_transform_information_csv_to_s3_task
     transform_tags_csv_task >> upload_transform_tags_csv_to_s3_task
     
-    [upload_transform_reviews_csv_to_s3_task, upload_transform_information_csv_to_s3_task, upload_transform_tags_csv_to_s3_task] >> trigger_upload_to_snowflake_task
+    [upload_transform_reviews_csv_to_s3_task, upload_transform_information_csv_to_s3_task, upload_transform_tags_csv_to_s3_task] >> call_trigger_task
 
     
-    trigger_upload_to_snowflake_task >> end_task
+    call_trigger_task >> end_task
 
