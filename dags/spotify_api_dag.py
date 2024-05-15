@@ -272,8 +272,10 @@ def load_spotify_api_to_s3(src_path: str, bucket_name: str) -> None:
 
     filenames = glob.glob(src_files_path)
     keys = [filename.replace(constant_util.AIRFLOW_HOME, "")[1:] for filename in filenames]
-    logging.info(filenames[0])
-    logging.info(keys[0])
+    
+    if len(filenames) > 0 :
+        logging.info(filenames[0])
+        logging.info(keys[0])
     common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True)
 
 # TODO: 현재 S3에 존재하는지 
