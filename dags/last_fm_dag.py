@@ -31,8 +31,7 @@ from datetime import datetime
 
 from sql import url
 from utils import common_util
-from utils import constant_util
-
+from utils.constant_util import Directory, Config, Date
 ###########################################################
 
 def get_soup(url):
@@ -43,9 +42,12 @@ def get_soup(url):
 def get_url(**kwargs):
     ti = kwargs['ti']
     select_track_list = ti.xcom_pull(task_ids='select_track_task')
+    logging.info(f"select track list length : {len(select_track_list)}")
     select_track_list = list(pd.DataFrame(select_track_list)['NAME'])[:10]
     #select_track_list = list(pd.DataFrame(context['task_instance'].xcom_pull(task_ids='select_track_task'))['NAME'])
+    
     select_artist_list = ti.xcom_pull(task_ids='select_artist_task')
+    logging.info(f"select artist list length : {len(select_artist_list)}")
     select_artist_list = list(pd.DataFrame(select_artist_list)['NAME'])[:10]
     #select_artist_list = list(pd.DataFrame(context['task_instance'].xcom_pull(task_ids='select_artist_task'))['NAME'])
 
@@ -211,8 +213,8 @@ def get_info(**kwargs):
 def get_last_fm_to_json(**kwargs):
     info_dic,review_dic = get_info(**kwargs)
 
-    reviews_src_path = os.path.join(constant_util.DOWNLOADS_DIR, f'last_fm/reviews')
-    info_src_path = os.path.join(constant_util.DOWNLOADS_DIR, f'last_fm/information')
+    reviews_src_path = os.path.join(Directory.DOWNLOADS_DIR, f'last_fm/reviews')
+    info_src_path = os.path.join(Directory.DOWNLOADS_DIR, f'last_fm/information')
     os.makedirs(reviews_src_path, exist_ok=True)
     os.makedirs(info_src_path, exist_ok=True)
     logging.info("Getting info start!")
@@ -234,17 +236,17 @@ def get_last_fm_to_json(**kwargs):
 ######################################################################################
 
 def upload_raw_files_to_s3(bucket_name: str) -> None:
-    reviews_src_path = os.path.join(constant_util.DOWNLOADS_DIR, f'last_fm/reviews')
+    reviews_src_path = os.path.join(Directory.DOWNLOADS_DIR, f'last_fm/reviews')
     reviews_path = os.path.join(reviews_src_path, '*.json')
 
-    info_src_path = os.path.join(constant_util.DOWNLOADS_DIR, f'last_fm/information')
+    info_src_path = os.path.join(Directory.DOWNLOADS_DIR, f'last_fm/information')
     info_path = os.path.join(info_src_path, '*.json')
 
     src_paths = [reviews_path, info_path]
 
     for src_path in src_paths:
         filenames = glob.glob(src_path)
-        keys = [filename.replace(constant_util.AIRFLOW_HOME, "")[1:] for filename in filenames]
+        keys = [filename.replace(Directory.AIRFLOW_HOME, "")[1:] for filename in filenames]
         common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True)
 
 with DAG(dag_id="last_fm_dag",
@@ -288,7 +290,7 @@ with DAG(dag_id="last_fm_dag",
         task_id = "upload_raw_files_to_s3_task",
         python_callable= upload_raw_files_to_s3,
         op_kwargs= {
-            "bucket_name": constant_util.BUCKET_NAME
+            "bucket_name": Config.BUCKET_NAME
         }
     )
 

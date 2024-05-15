@@ -14,19 +14,19 @@ from typing import List, Tuple
 import logging
 import os
 import glob
-from utils.constant_util import *
+from utils.constant_util import Directory, Config, Date
 from utils import common_util
 
 def get_spotify_chart_urls() -> List:
     base_url = "https://charts.spotify.com/charts/view/"
-    spotify_charts_urls = [base_url + f'regional-{region}-daily/{US_DATE}' for region in REGIONS]
+    spotify_charts_urls = [base_url + f'regional-{region}-daily/{Date.US_DATE}' for region in Config.REGIONS]
 
     logging.info(spotify_charts_urls[0])
     return spotify_charts_urls
 
 
 def spotify_charts_csv() -> None:
-    src_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{US_DATE}')
+    src_path = os.path.join(Directory.DOWNLOADS_DIR, f'spotify/charts/{Date.US_DATE}')
 
     if not os.path.exists(src_path):
         os.makedirs(src_path)
@@ -54,10 +54,10 @@ def spotify_charts_csv() -> None:
     time.sleep(3)
     # ID, PW 입력
     username_field = driver.find_element(By.ID, 'login-username') # 예시 id, 실제 id로 대체해야 함
-    username_field.send_keys(SPOTIFY_CHARTS_LOGIN_USERNAME)
+    username_field.send_keys(Config.SPOTIFY_CHARTS_LOGIN_USERNAME)
 
     password_field = driver.find_element(By.ID, 'login-password') # 예시 id, 실제 id로 대체해야 함
-    password_field.send_keys(SPOTIFY_CHARTS_LOGIN_PASSWORD)
+    password_field.send_keys(Config.SPOTIFY_CHARTS_LOGIN_PASSWORD)
 
     login_button = driver.find_element(By.ID, 'login-button') # 예시 id, 실제 id로 대체해야 함
     login_button.click()
@@ -88,11 +88,11 @@ def transform_and_concat_csv() -> None:
     # 트랙 테이블에서 spotify_id(외부 아이디)로 id 값을 가져와서 track_info 연결하기
 
  
-    src_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{US_DATE}')
+    src_path = os.path.join(Directory.DOWNLOADS_DIR, f'spotify/charts/{Date.US_DATE}')
     src_files = os.path.join(src_path, "*.csv")
 
 
-    dst_path = os.path.join(TRANSFORM_DIR, f'spotify/charts/{US_DATE}')
+    dst_path = os.path.join(Directory.TRANSFORM_DIR, f'spotify/charts/{Date.US_DATE}')
         
     if not os.path.exists(dst_path):
         os.makedirs(dst_path)
@@ -107,7 +107,7 @@ def transform_and_concat_csv() -> None:
     for filename in filenames:
         df = pd.read_csv(filename)
         df['spotify_track_id'] = df['uri'].str.split(':').str[-1]
-        df['chart_date'] = US_DATE
+        df['chart_date'] = Date.US_DATE
         df['region'] = filename.split('/')[-1].split('-')[1] 
 
         # 컬럼 이름 변경
@@ -122,17 +122,17 @@ def transform_and_concat_csv() -> None:
     
         transform_df = pd.concat([transform_df, df])
 
-    dst_file = os.path.join(dst_path, f'transform-concat-daily-{US_DATE}.csv')
+    dst_file = os.path.join(dst_path, f'transform-concat-daily-{Date.US_DATE}.csv')
     transform_df.to_csv(dst_file, encoding='utf-8', index=False)
 
     logging.info(dst_file)
     logging.info(len(transform_df))
 
 def load_spotify_charts_to_s3(bucket_name: str) -> None:
-    src_path = os.path.join(DOWNLOADS_DIR, f'spotify/charts/{US_DATE}/*.csv')
+    src_path = os.path.join(Directory.DOWNLOADS_DIR, f'spotify/charts/{Date.US_DATE}/*.csv')
 
     filenames = glob.glob(src_path)
-    keys = [filename.replace(AIRFLOW_HOME, "")[1:] for filename in filenames]
+    keys = [filename.replace(Directory.AIRFLOW_HOME, "")[1:] for filename in filenames]
     logging.info(filenames[0])
     logging.info(keys[0])
 
@@ -163,7 +163,7 @@ with DAG(dag_id="spotify_charts_dag",
         task_id = "load_spotify_charts_to_s3_task",
         python_callable= load_spotify_charts_to_s3,
         op_kwargs= {
-            "bucket_name": BUCKET_NAME
+            "bucket_name": Config.BUCKET_NAME
         }
     )
 
