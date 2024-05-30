@@ -11,7 +11,7 @@ import logging
 import os
 import base64
 import requests
-import glob
+import globP
 import json
 import math
 import time
