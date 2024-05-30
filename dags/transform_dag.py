@@ -359,7 +359,7 @@ with DAG(dag_id="transform_dag",
 
     upload_transform_reviews_csv_to_s3_task = PythonOperator(
         task_id="upload_transform_review_csv_to_s3_task",
-        python_callable=upload_transform_track_artist_csv_to_s3,
+        python_callable=upload_transform_reviews_csv_to_s3,
         op_kwargs= {
             "bucket_name": BUCKET_NAME
         }
