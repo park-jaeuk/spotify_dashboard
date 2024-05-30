@@ -29,6 +29,7 @@ import json
 from urllib.parse import quote
 from datetime import datetime
 
+
 from sql import url
 from utils import common_util
 from utils import constant_util
@@ -43,10 +44,10 @@ def get_soup(url):
 def get_url(**kwargs):
     ti = kwargs['ti']
     select_track_list = ti.xcom_pull(task_ids='select_track_task')
-    select_track_list = list(pd.DataFrame(select_track_list)['NAME'])[:10]
+    select_track_list = list(pd.DataFrame(select_track_list)['NAME'])[:100]
     #select_track_list = list(pd.DataFrame(context['task_instance'].xcom_pull(task_ids='select_track_task'))['NAME'])
     select_artist_list = ti.xcom_pull(task_ids='select_artist_task')
-    select_artist_list = list(pd.DataFrame(select_artist_list)['NAME'])[:10]
+    select_artist_list = list(pd.DataFrame(select_artist_list)['NAME'])[:100]
     #select_artist_list = list(pd.DataFrame(context['task_instance'].xcom_pull(task_ids='select_artist_task'))['NAME'])
 
     artist_name_list = list(map(lambda x: quote(x), select_artist_list))
@@ -66,7 +67,7 @@ def get_url(**kwargs):
 
 def get_spotify_id(**kwargs):
     ti = kwargs['ti']
-    select_spotify_track_id_list = list(pd.DataFrame(ti.xcom_pull(task_ids='select_spotify_track_id_task'))['SPOTIFY_TRACK_ID'])[:10]
+    select_spotify_track_id_list = list(pd.DataFrame(ti.xcom_pull(task_ids='select_spotify_track_id_task'))['SPOTIFY_TRACK_ID'])[:100]
     logging.info("Getting spotify id successfully")
     return select_spotify_track_id_list
 
@@ -209,7 +210,10 @@ def get_info(**kwargs):
 ##############################################################
 
 def get_last_fm_to_json(**kwargs):
+    ti = kwargs['ti']
     info_dic,review_dic = get_info(**kwargs)
+    ti.xcom_push(key=f"info_dic", value=info_dic)
+    ti.xcom_push(key=f"review_dic", value=review_dic)
 
     reviews_src_path = os.path.join(constant_util.DOWNLOADS_DIR, f'last_fm/reviews')
     info_src_path = os.path.join(constant_util.DOWNLOADS_DIR, f'last_fm/information')
