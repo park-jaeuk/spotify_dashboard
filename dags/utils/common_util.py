@@ -6,6 +6,24 @@ import pandas as pd
 
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
+def get_newest_date(**kwargs):
+    ti = kwargs['ti']
+    select_track_list = ti.xcom_pull(task_ids='select_last_fm_task')
+    df  = pd.DataFrame(select_track_list)
+    logging.info(df.columns)
+
+    df['TRACK'] = df['TRACK'].str.replace(' ','+')
+    df['ARTIST'] = df['ARTIST'].str.replace(' ','+')
+
+    basic_url = 'https://www.last.fm/music/'
+    url_list = basic_url + df['ARTIST'] + '/_/' + df['TRACK'] + '/+shoutbox?sort=newest&page='
+
+    lst = list(zip(list(df['SPOTIFY_TRACK_ID']), df['MAX_REVIEWS_DATE']))
+    dic = dict(zip(url_list,lst))
+    return dic
+
+
+
 def save_file(df: pd.DataFrame, target_dir: str, target_file: str) -> None:
     """_summary_
 
