@@ -33,6 +33,8 @@ from datetime import datetime
 from sql import url
 from utils import common_util
 from utils.constant_util import Directory, Config, Date
+
+
 ###########################################################
 
 def get_soup(url):
@@ -43,13 +45,10 @@ def get_soup(url):
 def get_url(**kwargs):
     ti = kwargs['ti']
     select_track_list = ti.xcom_pull(task_ids='select_track_task')
-    logging.info(f"select track list length : {len(select_track_list)}")
-    select_track_list = list(pd.DataFrame(select_track_list)['NAME'])[:10]
+    select_track_list = list(pd.DataFrame(select_track_list)['NAME'])[:100]
     #select_track_list = list(pd.DataFrame(context['task_instance'].xcom_pull(task_ids='select_track_task'))['NAME'])
-    
     select_artist_list = ti.xcom_pull(task_ids='select_artist_task')
-    logging.info(f"select artist list length : {len(select_artist_list)}")
-    select_artist_list = list(pd.DataFrame(select_artist_list)['NAME'])[:10]
+    select_artist_list = list(pd.DataFrame(select_artist_list)['NAME'])[:100]
     #select_artist_list = list(pd.DataFrame(context['task_instance'].xcom_pull(task_ids='select_artist_task'))['NAME'])
 
     artist_name_list = list(map(lambda x: quote(x), select_artist_list))
@@ -240,12 +239,9 @@ def get_review(**kwargs):
 
 ##############################################################
 
-def get_last_fm_to_json(**kwargs):
-    info_dic,review_dic = get_info(**kwargs)
-
-    reviews_src_path = os.path.join(Directory.DOWNLOADS_DIR, f'last_fm/reviews')
+def get_info_to_json(**kwargs):
+    info_dic = get_info(**kwargs)
     info_src_path = os.path.join(Directory.DOWNLOADS_DIR, f'last_fm/information')
-    os.makedirs(reviews_src_path, exist_ok=True)
     os.makedirs(info_src_path, exist_ok=True)
     logging.info("Getting info start!")
 
@@ -262,7 +258,7 @@ def get_last_fm_to_json(**kwargs):
 def get_review_to_json(**kwargs):
     total_review_list = get_review(**kwargs)
 
-    reviews_src_path = os.path.join(constant_util.DOWNLOADS_DIR, f'last_fm/reviews')
+    reviews_src_path = os.path.join(Directory.DOWNLOADS_DIR, f'last_fm/reviews')
     os.makedirs(reviews_src_path, exist_ok=True)
     logging.info("Getting info start!")
 
