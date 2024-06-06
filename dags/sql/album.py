@@ -4,12 +4,12 @@ def select_album(bucket_name: str, date: str=None):
 
     CREATE TABLE IF NOT EXISTS album(
         id bigint NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-        spotify_album_id varchar NULL,
-        name varchar NULL,
-        total_tracks int NULL,
-        album_type varchar NULL,
-        release_date date NULL,
-        release_date_precision varchar NULL
+        spotify_album_id varchar NOT NULL,
+        name varchar NOT  NULL,
+        total_tracks int NOT NULL,
+        album_type varchar NOT NULL,
+        release_date date NOT NULL,
+        release_date_precision varchar NOT NULL
     );
 
     CREATE OR REPLACE FILE FORMAT my_csv_format
