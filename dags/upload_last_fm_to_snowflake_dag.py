@@ -5,7 +5,10 @@ from airflow.providers.snowflake.operators.snowflake import SnowflakeOperator
 from datetime import datetime
 import pandas as pd
 from typing import List, Tuple
-from utils import constant_util
+
+from sql import url
+from utils import common_util
+from utils.constant_util import Directory, Config, Date
 
 from sql import album
 from sql import artist
@@ -27,19 +30,19 @@ with DAG(dag_id="upload_last_fm_to_snowflake_dag",
 
     load_information_task = SnowflakeOperator(
         task_id='load_information_task',
-        sql=information.select_information(constant_util.BUCKET_NAME, constant_util.US_DATE),
+        sql=information.select_information(Config.BUCKET_NAME, Date.US_DATE),
         snowflake_conn_id='s3_to_snowflake'
     )
 
     load_review_task = SnowflakeOperator(
         task_id='load_review_task',
-        sql=review.select_review(constant_util.BUCKET_NAME, constant_util.US_DATE),
+        sql=review.select_review(Config.BUCKET_NAME, Date.US_DATE),
         snowflake_conn_id='s3_to_snowflake'
     )
 
     load_tag_task = SnowflakeOperator(
         task_id='load_tag_task',
-        sql=tag.select_tag(constant_util.BUCKET_NAME, constant_util.US_DATE),
+        sql=tag.select_tag(Config.BUCKET_NAME, Date.US_DATE),
         snowflake_conn_id='s3_to_snowflake'
     )
 
