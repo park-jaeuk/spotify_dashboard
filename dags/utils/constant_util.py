@@ -27,7 +27,7 @@ class Directory:
 # local_tz = pendulum.timezone("Asia/Seoul")
 # # 현재 시간 설정
 # NOW_DATE = datetime.now(tz=local_tz).strftime('%Y-%m-%d')
-# US_DATE = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
+#US_DATE = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
 # US_DATE = "2024-03-22"
 
 class Date:    

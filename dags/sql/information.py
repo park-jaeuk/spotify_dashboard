@@ -4,11 +4,11 @@ def select_information (bucket_name: str, date: str=None) :
 
     CREATE TABLE IF NOT EXISTS information(
         id bigint NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-        spotify_track_id varchar NULL,
+        spotify_track_id varchar NOT NULL,
         listeners bigint NULL,
         duration bigint NULL,
         wiki varchar NULL,
-        last_fm_url varchar NULL
+        last_fm_url varchar NOT NULL
     );
 
 

@@ -4,9 +4,9 @@ def select_artist(bucket_name: str, date: str=None):
 
     CREATE TABLE IF NOT EXISTS artist(
         id bigint NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-        spotify_artist_id varchar NULL,
-        name varchar NULL,
-        type varchar NULL
+        spotify_artist_id varchar NOT NULL,
+        name varchar NOT NULL,
+        type varchar NOT NULL
     );
 
 

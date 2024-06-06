@@ -4,8 +4,8 @@ def select_tag(bucket_name: str, date: str=None) :
 
     CREATE TABLE IF NOT EXISTS tags(
         id bigint NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-        spotify_track_id varchar NULL,
-        tags varchar NULL
+        spotify_track_id varchar NOT NULL,
+        tags varchar NOT NULL
     );
 
     CREATE OR REPLACE FILE FORMAT my_csv_format

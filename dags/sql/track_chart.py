@@ -4,14 +4,14 @@ def select_track_chart(bucket_name: str, date: str=None) :
 
     CREATE TABLE IF NOT EXISTS  track_chart(
         id bigint NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-        spotify_track_id varchar NULL,
-        now_rank int NULL,
-        peak_rank int NULL,
-        previous_rank int NULL,
-        total_days_on_chart int NULL,
-        stream_count bigint NULL,
-        region varchar NULL,
-        chart_date date NULL 
+        spotify_track_id varchar NOT NULL,
+        now_rank int NOT NULL,
+        peak_rank int NOT NULL,
+        previous_rank int NOT NULL,
+        total_days_on_chart int NOT NULL,
+        stream_count bigint NOT NULL,
+        region varchar NOT NULL,
+        chart_date date NOT NULL 
     );
 
 

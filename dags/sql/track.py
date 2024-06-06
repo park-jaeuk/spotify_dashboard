@@ -4,10 +4,10 @@ def select_track(bucket_name: str, date: str=None) :
 
     CREATE TABLE IF NOT EXISTS  track(
         id bigint NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-        spotify_track_id varchar NULL,
-        spotify_album_id varchar NULL,
-        name varchar NULL,
-        duration_ms bigint NULL
+        spotify_track_id varchar NOT NULL,
+        spotify_album_id varchar NOT NULL,
+        name varchar NOT NULL,
+        duration_ms bigint NOT NULL
     );
 
 

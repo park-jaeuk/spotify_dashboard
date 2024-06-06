@@ -4,10 +4,10 @@ def select_review(bucket_name: str, date: str=None) :
 
     CREATE TABLE IF NOT EXISTS reviews(
         id bigint NOT NULL AUTOINCREMENT START 1 INCREMENT 1,
-        spotify_track_id varchar NULL,
-        reviews_date datetime NULL,
-        contents varchar NULL,
-        likes bigint NULL
+        spotify_track_id varchar NOT NULL,
+        reviews_date datetime NOT NULL,
+        contents varchar NOT NULL,
+        likes bigint NOT NULL
     );
 
 

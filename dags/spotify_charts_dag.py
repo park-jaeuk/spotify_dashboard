@@ -32,7 +32,7 @@ def spotify_charts_csv() -> None:
         os.makedirs(src_path)
 
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    #chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_experimental_option("prefs", {
@@ -46,6 +46,7 @@ def spotify_charts_csv() -> None:
     driver.maximize_window()
     driver.get('https://charts.spotify.com/charts/view/regional-ar-daily/2024-03-14')
     spotify_chart_urls = get_spotify_chart_urls()
+    logging.info(spotify_chart_urls[0])
 
     time.sleep(2)
     # 로그인 버튼
@@ -64,6 +65,8 @@ def spotify_charts_csv() -> None:
 
     time.sleep(3)
     
+    logging.info("Accessing website successfully!")
+
     for url in spotify_chart_urls[:5]:
         # daily_address = address + '/' + US_DATE
         driver.get(url)

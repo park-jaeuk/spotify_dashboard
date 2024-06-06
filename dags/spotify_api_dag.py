@@ -361,8 +361,20 @@ with DAG(dag_id="spotify_api_dag",
         }
     )
 
-    call_trigger_task = TriggerDagRunOperator(
-        task_id='call_trigger',
+    transform_spotify_trigger_task = TriggerDagRunOperator(
+        task_id='transform_spotify_trigger_task',
+        trigger_dag_id='transform_spotify_dag',
+        trigger_run_id=None,
+        execution_date=None,
+        reset_dag_run=False,
+        wait_for_completion=False,
+        poke_interval=60,
+        allowed_states=["success"],
+        failed_states=None,
+    )
+
+    last_fm_trigger_task = TriggerDagRunOperator(
+        task_id='last_fm_trigger_task',
         trigger_dag_id='last_fm_dag',
         trigger_run_id=None,
         execution_date=None,
@@ -377,11 +389,12 @@ with DAG(dag_id="spotify_api_dag",
         task_id = "end_task"
     )
 
+
+
     start_task >> spotify_track_group >> load_track_to_s3_task
     spotify_track_group >> get_id_list_task >>spotify_album_group 
 
     spotify_album_group >> load_album_to_s3_task
     spotify_album_group >> spotify_artist_group
 
-    spotify_artist_group >> load_artist_to_s3_task
-    load_artist_to_s3_task >> call_trigger_task >> end_task
+    spotify_artist_group >> load_artist_to_s3_task >> [transform_spotify_trigger_task, last_fm_trigger_task] >> end_task
