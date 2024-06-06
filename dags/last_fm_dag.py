@@ -108,8 +108,10 @@ def get_introduction(soup):
     return introduction
 
 def get_reviews(review_url,soup):
+    spotify_track_id, top_date = common_util.get_newest_date[review_url]
     review_collection = []
-    # 리뷰 페이지 여러개 일 때
+    dic = {}
+    review_dict = {}
     try:
         pages = int(soup.select('div.col-main>section>section.js-shouts-container.shoutbox.shoutbox--subpage>nav.pagination>ul.pagination-list')[0].find_all('li', class_='pagination-page')[-1].text.strip())
         for page in range(1,pages+1):
@@ -120,26 +122,32 @@ def get_reviews(review_url,soup):
             for review in reviews.select('li.shout-list-item.js-shout-list-item.js-shouts-container>div.shout-container>div.shout.js-shout.js-link-block'):
                 dic = {}
                 try:
-                    dic['review'] = review.find('div',class_='shout-body').text.strip().replace('\r', ' ').replace('\n', ' ')
-                except:
-                    dic['review'] = ''
-                try:
                     date_str = review.find('a',class_='shout-permalink shout-timestamp').text.strip()
                     datetime_obj = datetime.strptime(date_str, '%d %b %Y, %I:%M%p')
-                    dic['date'] = datetime_obj.strftime('%Y-%m-%d %H:%M')
+                    newest_date = datetime_obj.strftime('%Y-%m-%d %H:%M')
                 except:
                     try:    
                         date_str = review.find('a',class_='shout-permalink shout-timestamp').text.strip()
                         datetime_obj = datetime.strptime(date_str, '%d %b %I:%M%p')
-                        dic['date'] = str(datetime.now().year)+ '-' +datetime_obj.strftime('%m-%d %H:%M')
+                        newest_date = str(datetime.now().year)+ '-' +datetime_obj.strftime('%m-%d %H:%M')
                     except:
-                        dic['date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
-                try:    
-                    dic['likes'] = int(review.select('ul.shout-actions>li.shout-action>div.vote-button-toggle')[0].text.strip().split('\n')[-1].strip()[:-6])
-                except:
-                    dic['likes'] = 0
-                review_collection.append(dic)
-
+                        newest_date = datetime.now().strftime('%Y-%m-%d %H:%M')
+                
+                if top_date < newest_date:
+                    dic['date'] = newest_date
+        
+                    try:
+                        dic['review'] = review.find('div',class_='shout-body').text.strip().replace('\r', ' ').replace('\n', ' ')
+                    except:
+                        dic['review'] = ''
+                        
+                    try:    
+                        dic['likes'] = int(review.select('ul.shout-actions>li.shout-action>div.vote-button-toggle')[0].text.strip().split('\n')[-1].strip()[:-6])
+                    except:
+                        dic['likes'] = 0
+                    review_collection.append(dic)
+                else:
+                    break
     except:
         # 리뷰 없음
         try:
@@ -152,42 +160,50 @@ def get_reviews(review_url,soup):
             for review in reviews.select('li.shout-list-item.js-shout-list-item.js-shouts-container>div.shout-container>div.shout.js-shout.js-link-block'):
                 dic = {}
                 try:
-                    dic['review'] = review.find('div',class_='shout-body').text.strip().replace('\r', ' ').replace('\n', ' ')
-                except:
-                    dic['review'] = ''
-                try:
                     date_str = review.find('a',class_='shout-permalink shout-timestamp').text.strip()
                     datetime_obj = datetime.strptime(date_str, '%d %b %Y, %I:%M%p')
-                    dic['date'] = datetime_obj.strftime('%Y-%m-%d %H:%M')
+                    newest_date = datetime_obj.strftime('%Y-%m-%d %H:%M')
                 except:
                     try:    
                         date_str = review.find('a',class_='shout-permalink shout-timestamp').text.strip()
                         datetime_obj = datetime.strptime(date_str, '%d %b %I:%M%p')
-                        dic['date'] = str(datetime.now().year)+ '-' +datetime_obj.strftime('%m-%d %H:%M')
+                        newest_date = str(datetime.now().year)+ '-' +datetime_obj.strftime('%m-%d %H:%M')
                     except:
-                        dic['date'] = datetime.now().strftime('%Y-%m-%d %H:%M')
-                try:
-                    dic['likes'] = int(review.select('ul.shout-actions>li.shout-action>div.vote-button-toggle')[0].text.strip().split('\n')[-1].strip()[:-6])
-                except:
-                    dic['likes'] = 0
-                review_collection.append(dic)
-    return review_collection
+                        newest_date = datetime.now().strftime('%Y-%m-%d %H:%M')
+                        
+                if top_date < newest_date:
+                    dic['date'] = newest_date
+                    
+                    try:
+                        dic['review'] = review.find('div',class_='shout-body').text.strip().replace('\r', ' ').replace('\n', ' ')
+                    except:
+                        dic['review'] = ''
+                        
+                    try:
+                        dic['likes'] = int(review.select('ul.shout-actions>li.shout-action>div.vote-button-toggle')[0].text.strip().split('\n')[-1].strip()[:-6])
+                    except:
+                        dic['likes'] = 0
+                    review_collection.append(dic)
+                else:
+                    break
+    dic['reviews'] = review_collection
+    review_dict[spotify_track_id] = dic
+
+    return review_dict
 
 ###########################################################
 # urls => 새로 추가되는 곡만
 
 def get_info(**kwargs):
     urls = get_url(**kwargs)
-    spotify_ids = get_spotify_id(**kwargs)
     info_dic = {}
-    review_dic = {}
+
     for i in range(len(urls)):
         wiki_url = urls[i] + '/+wiki'
-        review_url = urls[i] + '/+shoutbox/?page='
+
         info_value_dic = {}
-        review_value_dic = {}
-        
         try:
+            # 불변
             soup = get_soup(urls[i])
             info_value_dic['listeners'] = get_listeners(soup)
             info_value_dic['length'] = get_length(soup)
@@ -197,44 +213,71 @@ def get_info(**kwargs):
             soup = get_soup(wiki_url)
             info_value_dic['introduction'] = get_introduction(soup)
 
-            soup = get_soup(review_url)
-            review_value_dic['reviews'] = get_reviews(review_url,soup)
-
-            info_dic[spotify_ids[i]] = info_value_dic
-            review_dic[spotify_ids[i]] = review_value_dic
         except:
             continue
     logging.info('Getting info successfully!')
-    return info_dic, review_dic
+    return info_dic
+
+def get_review(**kwargs):
+    urls = get_url(**kwargs)
+
+    review_dic = {}
+    for i in range(len(urls)):
+        review_url = urls[i] + '/+shoutbox?sort=newest&page='
+
+        total_review_list = []
+        try:
+            # 가변
+            soup = get_soup(review_url)
+            review_dic = get_reviews(review_url,soup)
+            total_review_list.append(review_dic)
+        except:
+            continue
+    logging.info('Getting info successfully!')
+    return total_review_list
 
 ##############################################################
 
-def get_last_fm_to_json(**kwargs):
-    ti = kwargs['ti']
-    info_dic,review_dic = get_info(**kwargs)
-    ti.xcom_push(key=f"info_dic", value=info_dic)
-    ti.xcom_push(key=f"review_dic", value=review_dic)
-
-    reviews_src_path = os.path.join(constant_util.DOWNLOADS_DIR, f'last_fm/reviews')
+def get_info_to_json(**kwargs):
+    info_dic = get_info(**kwargs)
     info_src_path = os.path.join(constant_util.DOWNLOADS_DIR, f'last_fm/information')
-    os.makedirs(reviews_src_path, exist_ok=True)
     os.makedirs(info_src_path, exist_ok=True)
     logging.info("Getting info start!")
+
     for spotify_id in list(info_dic.keys()):
-        review_dic_json = {}
         info_dic_json = {}
-
-        reviews_json_path = os.path.join(reviews_src_path, f'{spotify_id}.json')
-        review_dic_json[spotify_id] = review_dic[spotify_id]
-
-        with open(reviews_json_path, 'w', encoding='utf-8') as review_json_file:
-            json.dump(review_dic_json, review_json_file, ensure_ascii=False, indent=4)
-
         info_json_path = os.path.join(info_src_path, f'{spotify_id}.json')
         info_dic_json[spotify_id] = info_dic[spotify_id]
+        
         with open(info_json_path, 'w', encoding='utf-8') as info_json_file:
             json.dump(info_dic_json, info_json_file, ensure_ascii=False, indent=4)
         logging.info(f'Getting {spotify_id} info successfully!')
+
+
+def get_review_to_json(**kwargs):
+    total_review_list = get_review(**kwargs)
+
+    reviews_src_path = os.path.join(constant_util.DOWNLOADS_DIR, f'last_fm/reviews')
+    os.makedirs(reviews_src_path, exist_ok=True)
+    logging.info("Getting info start!")
+
+    for review_dict in total_review_list:
+        for spotify_id in list(review_dict.keys()):
+            reviews_json_path = os.path.join(reviews_src_path, f'{spotify_id}.json')
+            if os.path.exists(reviews_json_path):
+                with open(reviews_json_path, 'r', encoding='utf-8') as review_json_file:
+                    review_dic_json = json.load(review_json_file)
+                review_dic_json.append(review_dict)
+
+                with open(reviews_json_path, 'w', encoding='utf-8') as review_json_file:
+                    json.dump(review_dic_json, review_json_file, ensure_ascii=False, indent=4)
+            else:
+                reviews_json_path = os.path.join(reviews_src_path,f'{spotify_id}.json')
+                with open(reviews_json_path, 'w', encoding='utf-8') as review_json_file:
+                    json.dump(review_dict, review_json_file, ensure_ascii=False, indent=4)
+            logging.info(f'Getting {spotify_id} review successfully!')
+                    
+        
 ######################################################################################
 
 def upload_raw_files_to_s3(bucket_name: str) -> None:
@@ -281,10 +324,19 @@ with DAG(dag_id="last_fm_dag",
         do_xcom_push=True
     )
 
+    mid_task = EmptyOperator(
+        task_id="mid_task"
+    )
 
-    last_fm_to_json_task = PythonOperator(
-        task_id = "last_fm_to_json_task",
-        python_callable=get_last_fm_to_json,
+    get_info_to_json_task  = PythonOperator(
+        task_id = "get_info_to_json_task",
+        python_callable=get_info_to_json,
+        provide_context = True
+    )
+
+    get_review_to_json_task  = PythonOperator(
+        task_id = "get_review_to_json_task",
+        python_callable=get_review_to_json,
         provide_context = True
     )
 
@@ -298,7 +350,7 @@ with DAG(dag_id="last_fm_dag",
 
     call_trigger_task = TriggerDagRunOperator(
         task_id='call_trigger',
-        trigger_dag_id='transform_dag',
+        trigger_dag_id='transform_last_fm_dag',
         trigger_run_id=None,
         execution_date=None,
         reset_dag_run=False,
@@ -312,8 +364,5 @@ with DAG(dag_id="last_fm_dag",
         task_id = "end_task"
     )
 
-    # start_task >> upload_raw_files_to_s3_task >> end_task
 
-    # start_task >> transform_and_concat_csv_task >> call_trigger_task >> end_task
-
-    start_task >>[select_track_task, select_artist_task, select_spotify_track_id_task] >> last_fm_to_json_task >> call_trigger_task >> upload_raw_files_to_s3_task >> end_task
+    start_task >> [select_track_task, select_artist_task, select_spotify_track_id_task] >> mid_task >> [get_info_to_json_task, get_review_to_json_task] >> call_trigger_task >> upload_raw_files_to_s3_task >> end_task
