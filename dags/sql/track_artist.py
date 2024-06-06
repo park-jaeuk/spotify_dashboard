@@ -3,8 +3,8 @@ def select_track_artist(bucket_name: str, date: str=None) :
     USE SCHEMA PUBLIC;
 
     CREATE TABLE IF NOT EXISTS track_artist(
-        spotify_track_id varchar NULL,
-        spotify_artist_id varchar NULL
+        spotify_track_id varchar NOT NULL,
+        spotify_artist_id varchar NOT NULL
     );
 
 
