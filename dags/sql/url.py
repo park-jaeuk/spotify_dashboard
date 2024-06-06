@@ -40,7 +40,7 @@ FROM
         spotify_track_id, 
         TO_CHAR(MAX(reviews_date), 'YYYY-MM-DD HH24:MI') AS max_reviews_date
     FROM 
-        reviews
+        (select * from reviews where contents IS NOT NULL)
     GROUP BY 
         spotify_track_id) r
 JOIN 
