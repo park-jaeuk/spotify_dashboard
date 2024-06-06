@@ -4,6 +4,7 @@ from airflow.operators.empty import EmptyOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
 from datetime import datetime
+from utils.constant_util import Config
 
 def upload_to_s3(filename: str, key: str, bucket_name: str) -> None:
     hook = S3Hook("aws_s3")
@@ -24,7 +25,7 @@ with DAG(dag_id="upload_to_s3",
         op_kwargs= {
             "filename": "/opt/airflow/data/spotify_album_api.json",
             "key": "data/spotify_album_api.json",
-            "bucket_name": "airflow-gin-bucket"
+            "bucket_name": Config.BUCKET_NAME
         }
     )
 
