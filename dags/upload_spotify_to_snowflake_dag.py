@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.providers.snowflake.operators.snowflake import SnowflakeOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
 from datetime import datetime
 import pandas as pd
@@ -33,37 +34,49 @@ with DAG(dag_id="upload_spotify_to_snowflake_dag",
 
     load_album_task = SnowflakeOperator(
         task_id='load_album_task',
-        sql=album.select_album(Config.BUCKET_NAME, Date.US_DATE),
+        sql=album.select_album(Config.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake'
     )
 
     load_artist_task = SnowflakeOperator(
         task_id='load_artist_task',
-        sql=artist.select_artist(Config.BUCKET_NAME, Date.US_DATE),
+        sql=artist.select_artist(Config.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake'
     )
 
 
     load_track_artist_task = SnowflakeOperator(
         task_id='load_track_artist_task',
-        sql=track_artist.select_track_artist(Config.BUCKET_NAME, Date.US_DATE),
+        sql=track_artist.select_track_artist(Config.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake'
     )
 
     load_track_chart_task = SnowflakeOperator(
         task_id='load_track_chart_task',
-        sql=track_chart.select_track_chart(Config.BUCKET_NAME, Date.US_DATE),
+        sql=track_chart.select_track_chart(Config.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake'
     )
 
     load_track_task = SnowflakeOperator(
         task_id='load_track_task',
-        sql=track.select_track(Config.BUCKET_NAME, Date.US_DATE),
+        sql=track.select_track(Config.BUCKET_NAME),
         snowflake_conn_id='s3_to_snowflake'
+    )
+
+    last_fm_trigger_task = TriggerDagRunOperator(
+        task_id='last_fm_trigger_task',
+        trigger_dag_id='last_fm_dag',
+        trigger_run_id=None,
+        execution_date=None,
+        reset_dag_run=False,
+        wait_for_completion=False,
+        poke_interval=60,
+        allowed_states=["success"],
+        failed_states=None,
     )
 
     end_task = EmptyOperator(
         task_id = "end_task"
     )
 
-    start_task >> [load_album_task, load_artist_task, load_track_artist_task, load_track_chart_task, load_track_task] >> end_task
+    start_task >> [load_album_task, load_artist_task, load_track_artist_task, load_track_chart_task, load_track_task] >> last_fm_trigger_task >> end_task
