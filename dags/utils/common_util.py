@@ -69,8 +69,14 @@ def upload_files_to_s3(filenames: List, keys: List, bucket_name: str, replace: b
     """
     hook = S3Hook("aws_s3")
 
+    cnt = 0
     for filename, key in zip(filenames, keys):
-        hook.load_file(filename=filename, key=key, bucket_name=bucket_name, replace=replace)
+        try:
+            hook.load_file(filename=filename, key=key, bucket_name=bucket_name, replace=replace)
+        except:
+            cnt += 1
+            pass
+    print(f"total exception : {cnt}")
 
 
 def get_new_keys(bucket_name: str, table: str):
