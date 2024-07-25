@@ -3,6 +3,9 @@ from airflow.operators.python import PythonOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.utils.task_group import TaskGroup
+from airflow.models import XCom
+from airflow.utils.session import create_session
+from airflow.models.variable import Variable
 
 from datetime import datetime
 import pandas as pd
@@ -115,19 +118,24 @@ def get_spotify_track_api(src_path: str, num_partition: int, idx:int, **context)
 
             with open(track_file_path, 'w') as f:
                 json.dump(track_json, f, indent=4)
-        
+
+    print(f"the length of spotify_album_id_list : {len(spotify_album_id_list)}")
+
     context["ti"].xcom_push(key=f"spotify_album_id_list_{idx}", value=spotify_album_id_list)
     context["ti"].xcom_push(key=f"spotify_artist_id_list_{idx}", value=spotify_artist_id_list)
+    context["ti"].xcom_push(key=f"spotify_track_id_list_{idx}", value=spotify_track_id_list)
 
 
 def get_id_list(num_partition: int, **context) -> None:
     spotify_album_id_list = []
     spotify_artist_id_list = []
+    spotify_track_id_list = []
 
     for idx in range(num_partition):
         logging.info("album, artist")
         logging.info(context['ti'].xcom_pull(key=f"spotify_album_id_list_{idx}"))
         logging.info(context['ti'].xcom_pull(key=f"spotify_artist_id_list_{idx}"))
+        logging.info(context['ti'].xcom_pull(key=f"spotify_track_id_list_{idx}"))
         
 
         spotify_album_id_list.extend(
@@ -136,20 +144,33 @@ def get_id_list(num_partition: int, **context) -> None:
 
         spotify_artist_id_list.extend(
             context["ti"].xcom_pull(key=f"spotify_artist_id_list_{idx}")
+        )  
+
+        spotify_track_id_list.extend(
+            context["ti"].xcom_pull(key=f"spotify_track_id_list_{idx}")
         )    
 
     spotify_album_id_list = list(set(spotify_album_id_list) - set(common_util.get_new_keys(Config.BUCKET_NAME, 'albums'))) # 중복 제거
     spotify_artist_id_list = list(set(spotify_artist_id_list) - set(common_util.get_new_keys(Config.BUCKET_NAME, 'artists'))) # 중복 제거
+    spotify_track_id_list = list(set(spotify_track_id_list) - set(common_util.get_new_keys(Config.BUCKET_NAME, 'tracks'))) # 중복 제거
 
+    print(spotify_track_id_list[:5])
     context["ti"].xcom_push(key=f"spotify_album_id_list", value=spotify_album_id_list)
     context["ti"].xcom_push(key=f"spotify_artist_id_list", value=spotify_artist_id_list)
+    context["ti"].xcom_push(key=f"spotify_track_id_list", value=spotify_track_id_list)
 
-    logging.info(f"spotify_album_id_list length: {len(spotify_album_id_list)}")
-    logging.info(f"spotify_artist_id_list length:{len(spotify_artist_id_list)}")
+    Variable.set("shared_list", json.dumps(spotify_track_id_list))
+
+    logging.info(f"spotify_album_id_list length : {len(spotify_album_id_list)}")
+    logging.info(f"spotify_artist_id_list length : {len(spotify_artist_id_list)}")
+    logging.info(f"spotify_track_id_list length : {len(spotify_track_id_list)}")
 
 # snowflake에 있는지 확인할 album들에 list 모음 (merge into 실행하기)
 def get_spotify_album_api(num_partition: int, idx:int, **context) -> None:
     spotify_album_id_list = context["ti"].xcom_pull(key="spotify_album_id_list")
+    spotify_track_id_list = context["ti"].xcom_pull(key="spotify_track_id_list")
+    print(f'the length of track id : {len(spotify_track_id_list)}')
+
     partition = math.ceil(len(spotify_album_id_list) / num_partition)
 
     start, end = idx * partition, (idx + 1) * partition
@@ -265,20 +286,27 @@ def get_spotify_artist_api(num_partition: int, idx:int, **context) -> None:
             with open(artist_file_path, 'w') as f:
                 json.dump(artist_json, f, indent=4)
 
-def load_spotify_api_to_s3(src_path: str, bucket_name: str) -> None:
-    src_files_path = os.path.join(Directory.DOWNLOADS_DIR, src_path)
-
-    filenames = glob.glob(src_files_path)
+# 새롭게 추가되는 애들만 s3에 추가
+def load_spotify_api_to_s3(category: str, bucket_name: str, **context) -> None:
+    spotify_id_list = context["ti"].xcom_pull(key=f"spotify_{category}_id_list")
+    print(f"the length of spotify_{category}_id list : {len(spotify_id_list)}")
+    src_path = os.path.join(Directory.DOWNLOADS_DIR, f'spotify/api/{category}s')
+    
+    filenames = [os.path.join(src_path, f"{spotify_id}.json") for spotify_id in spotify_id_list]
     keys = [filename.replace(Directory.AIRFLOW_HOME, "")[1:] for filename in filenames]
     
     if len(filenames) > 0 :
         logging.info(filenames[0])
         logging.info(keys[0])
+    
     common_util.upload_files_to_s3(filenames=filenames, keys=keys, bucket_name=bucket_name, replace=True)
 
-# TODO: 현재 S3에 존재하는지 
-
-# TODO: S3에 담은 후에 삭제하는 거 추가하기
+def delete_xcoms_for_dag(dag_id, **kwargs):
+    with create_session() as session:
+        session.query(XCom).filter(
+            XCom.dag_id == dag_id
+        ).delete(synchronize_session=False)
+        session.commit()
     
 NUM_PARTITION = 3
 
@@ -307,7 +335,7 @@ with DAG(dag_id="spotify_api_dag",
         task_id="load_track_to_s3_task",
         python_callable=load_spotify_api_to_s3,
         op_kwargs={
-            "src_path": f'spotify/api/tracks/*.json',
+            "category": "track",
             "bucket_name": Config.BUCKET_NAME
         }
     )
@@ -328,7 +356,8 @@ with DAG(dag_id="spotify_api_dag",
         python_callable=get_id_list,
         op_kwargs={
             "num_partition": NUM_PARTITION,
-        }
+        },
+        provide_context=True
     )
     
 
@@ -336,7 +365,7 @@ with DAG(dag_id="spotify_api_dag",
         task_id="load_album_to_s3_task",
         python_callable=load_spotify_api_to_s3,
         op_kwargs={
-            "src_path": f'spotify/api/albums/*.json',
+            "category": "album",
             "bucket_name": Config.BUCKET_NAME
         }
     )
@@ -356,7 +385,7 @@ with DAG(dag_id="spotify_api_dag",
         task_id="load_artist_to_s3_task",
         python_callable=load_spotify_api_to_s3,
         op_kwargs={
-            "src_path": f'spotify/api/artists/*.json',
+            "category": "artist",
             "bucket_name": Config.BUCKET_NAME
         }
     )
@@ -373,16 +402,11 @@ with DAG(dag_id="spotify_api_dag",
         failed_states=None,
     )
 
-    last_fm_trigger_task = TriggerDagRunOperator(
-        task_id='last_fm_trigger_task',
-        trigger_dag_id='last_fm_dag',
-        trigger_run_id=None,
-        execution_date=None,
-        reset_dag_run=False,
-        wait_for_completion=False,
-        poke_interval=60,
-        allowed_states=["success"],
-        failed_states=None,
+
+    delete_xcom_task = PythonOperator(
+        task_id="delete_xcom_task",
+        python_callable=delete_xcoms_for_dag,
+        op_kwargs={'dag_id': 'spotify_api_dag'}
     )
 
     end_task = EmptyOperator(
@@ -391,10 +415,10 @@ with DAG(dag_id="spotify_api_dag",
 
 
 
-    start_task >> spotify_track_group >> load_track_to_s3_task
-    spotify_track_group >> get_id_list_task >>spotify_album_group 
-
+    start_task >> spotify_track_group >> get_id_list_task
+    get_id_list_task >> load_track_to_s3_task 
+    get_id_list_task >> spotify_album_group
     spotify_album_group >> load_album_to_s3_task
     spotify_album_group >> spotify_artist_group
 
-    spotify_artist_group >> load_artist_to_s3_task >> [transform_spotify_trigger_task, last_fm_trigger_task] >> end_task
+    spotify_artist_group >> load_artist_to_s3_task >> transform_spotify_trigger_task >> delete_xcom_task >> end_task
