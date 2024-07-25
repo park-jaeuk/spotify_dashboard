@@ -19,7 +19,7 @@ with DAG(dag_id="delete_dirs_dag",
          catchup=False) :
     
     directories = []
-    directories.append(os.path.join(Directory.DOWNLOADS_DIR, f'spotify'))
+    directories.append(os.path.join(Directory.DOWNLOADS_DIR, f'spotify/api'))
     directories.append(os.path.join(Directory.DOWNLOADS_DIR, f'last_fm'))
     
     directories.append(os.path.join(Directory.TRANSFORM_DIR, f'spotify'))
