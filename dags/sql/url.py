@@ -50,3 +50,10 @@ JOIN
 JOIN 
     artist a ON ta.spotify_artist_id = a.spotify_artist_id;
 """
+
+select_track_artist_spotify_track_id = """
+SELECT distinct track.name as track, artist.name as artist, track.spotify_track_id
+FROM track_artist
+JOIN track ON track_artist.spotify_track_id = track.spotify_track_id
+JOIN artist ON track_artist.spotify_artist_id = artist.spotify_artist_id;
+"""
