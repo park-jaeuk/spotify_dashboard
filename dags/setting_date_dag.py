@@ -6,12 +6,12 @@ from datetime import datetime, timedelta
 from utils.constant_util import Date
 
 with DAG(dag_id="setting_date_dag",
-         schedule_interval=timedelta(minutes=10), # trigger DAG는 보통 None으로 처리 합니다.
+         schedule_interval=None, # trigger DAG는 보통 None으로 처리 합니다.
          start_date=datetime(2024, 1, 1),
          catchup=False) :
 
     setting_date_task = PythonOperator(
-        task_id = "transform_artist_csv_task",
+        task_id = "setting_date_task",
         python_callable=Date.plus_one_day
     )
 
@@ -27,3 +27,4 @@ with DAG(dag_id="setting_date_dag",
         failed_states=None,
     )
 
+    setting_date_task >> call_trigger_task
