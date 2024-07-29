@@ -71,7 +71,7 @@ def get_url(**context):
     
     print(f'the length of url_lst : {len(url_list)}')
     print(f'the length of spotify_track_id_list : {len(spotify_track_id_list)}')
-    print(url_list[0])
+    #print(url_list[0])
 
     context["ti"].xcom_push(key='url_list', value=url_list)
     context["ti"].xcom_push(key='spotify_track_id_list', value=spotify_track_id_list)
