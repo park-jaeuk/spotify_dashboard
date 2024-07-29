@@ -59,6 +59,10 @@ def select_track_chart(bucket_name: str) :
     SELECT DISTINCT spotify_track_id, now_rank, peak_rank, previous_rank, total_days_on_chart, stream_count, region, chart_date
     FROM temp_track_chart;
 
+    -- 임시테이블 삭제
+    drop table temp_track_chart;
+
+
     -- 트랜잭션 커밋
     COMMIT;
         """

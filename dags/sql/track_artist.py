@@ -47,6 +47,9 @@ def select_track_artist(bucket_name: str) :
     SELECT DISTINCT spotify_track_id, spotify_artist_id
     FROM temp_track_artist;
 
+    -- 임시테이블 삭제
+    drop table temp_track_artist;
+
     -- 트랜잭션 커밋
     COMMIT;
     """

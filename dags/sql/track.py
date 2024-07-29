@@ -3,6 +3,7 @@ def select_track(bucket_name: str) :
     USE SCHEMA PUBLIC;
 
     drop table track;
+    drop table temp_track;
 
     -- 최종 테이블 생성
     CREATE TABLE IF NOT EXISTS track(

@@ -48,6 +48,9 @@ def select_tag(bucket_name: str, date: str=None) :
     SELECT DISTINCT spotify_track_id, tags
     FROM temp_tags;
 
+    -- 임시테이블 삭제
+    drop table temp_tags;
+
     -- 트랜잭션 커밋
     COMMIT;
 

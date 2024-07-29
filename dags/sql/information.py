@@ -54,6 +54,9 @@ def select_information (bucket_name: str, date: str=None) :
     SELECT DISTINCT spotify_track_id, listeners, length, last_fm_url, introduction
     FROM temp_information;
 
+    -- 임시테이블 삭제
+    drop table temp_information;
+
     -- 트랜잭션 커밋
     COMMIT;
     """

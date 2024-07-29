@@ -56,6 +56,9 @@ def select_album(bucket_name: str):
     SELECT DISTINCT spotify_album_id, name, total_tracks, album_type, release_date, release_date_precision
     FROM temp_album;
 
+    -- 임시테이블 삭제
+    drop table temp_album;
+
     -- 트랜잭션 커밋
     COMMIT;
     """
