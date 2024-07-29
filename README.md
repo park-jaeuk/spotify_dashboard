@@ -45,8 +45,8 @@
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href=""><img src="https://avatars.githubusercontent.com/u/45815193?v=4" width="125px;" alt=""/><br /><sub><b>김진호</b></sub></a><br /></td>
-      <td align="center"><a href=""><img src="https://avatars.githubusercontent.com/u/141096385?v=4" width="125px;" alt=""/><br /><sub><b>박재욱</b></sub></a><br /></td>
+      <td align="center"><a href="https://github.com/GinToFim"><img src="https://avatars.githubusercontent.com/u/45815193?v=4" width="125px;" alt=""/><br /><sub><b>김진호</b></sub></a><br /></td>
+      <td align="center"><a href="https://github.com/park-jaeuk"><img src="https://avatars.githubusercontent.com/u/141096385?v=4" width="125px;" alt=""/><br /><sub><b>박재욱</b></sub></a><br /></td>
      </tr>
   </tbody>
 </table>
