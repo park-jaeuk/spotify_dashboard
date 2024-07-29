@@ -5,12 +5,16 @@
     <br />
     <img src="./asset/logo.png">
     <br />
+    <br />
     <img src="https://img.shields.io/badge/spotify-1DB954?style=for-the-badge&logo=spotify&logoColor=white">
     <img src="https://img.shields.io/badge/Airflow-017CEE?style=for-the-badge&logo=Apache%20Airflow&logoColor=white">
     <img src="https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white">
-    <br />
     <img src="https://img.shields.io/badge/tableau-E97627?style=for-the-badge&logo=tableau&logoColor=white">
-    <img src="https://img.shields.io/badge/aws s3-569A31?style=for-the-badge&logo=amazons3&logoColor=white"> 
+    <br />
+    <img src="https://img.shields.io/badge/amazon ec2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white">
+    <img src="https://img.shields.io/badge/aws s3-569A31?style=for-the-badge&logo=amazons3&logoColor=white">
+    <img src="https://img.shields.io/badge/snowflake-29B5E8?style=for-the-badge&logo=snowflake&logoColor=white">
+     
   </p>
 </div>
 
@@ -33,6 +37,19 @@
     - 음악 장르별 스트리밍 비율
     - 인기 트랙 Top 10 차트
     - 인기 아티스트 Top 10 랭킹
+
+<!-- CONTACT -->
+## 👥 팀원
+
+### Members
+<table>
+  <tbody>
+    <tr>
+      <td align="center"><a href=""><img src="https://avatars.githubusercontent.com/u/45815193?v=4" width="125px;" alt=""/><br /><sub><b>김진호</b></sub></a><br /></td>
+      <td align="center"><a href=""><img src="https://avatars.githubusercontent.com/u/141096385?v=4" width="125px;" alt=""/><br /><sub><b>박재욱</b></sub></a><br /></td>
+     </tr>
+  </tbody>
+</table>
 
 ## 🔎 프로젝트 구조
 <img src="./asset/arche.png">
