@@ -54,6 +54,9 @@
 ## 🔎 프로젝트 구조
 <img src="./asset/arche.png">
 
+## 💻 ERD
+<img src="./asset/erd.png">
+
 ## 🗄 디렉토리 구조 <a name='folder'></a>
 ```Plain Text
 ├──📁dags
