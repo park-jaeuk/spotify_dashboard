@@ -1,9 +1,9 @@
 <!-- PROJECT LOGO -->
 <br />
-  <h1 align="center">Spotify & LAST.FM을 이용한 2024 음악 트랜드</h1>
+  <h1 align="center">Spotify & LAST.FM을 이용한 2024 음악 트렌드 분석</h1>
   <p align="center">
-    Tableau를 이용한 2024년 전 세계 음악 트랜드 분석 및 시각화
     <br />
+    <img src="./asset/logo.png">
     <br />
     <img src="https://img.shields.io/badge/spotify-1DB954?style=for-the-badge&logo=spotify&logoColor=white">
     <img src="https://img.shields.io/badge/Airflow-017CEE?style=for-the-badge&logo=Apache%20Airflow&logoColor=white">
