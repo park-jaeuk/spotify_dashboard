@@ -21,7 +21,6 @@ def get_spotify_chart_urls() -> List:
     base_url = "https://charts.spotify.com/charts/view/"
     spotify_charts_urls = [base_url + f'regional-{region}-daily/{Date.US_DATE}' for region in Config.REGIONS]
 
-    logging.info(spotify_charts_urls[0])
     return spotify_charts_urls
 
 
@@ -32,7 +31,7 @@ def spotify_charts_csv() -> None:
         os.makedirs(src_path)
 
     chrome_options = Options()
-    #chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_experimental_option("prefs", {
@@ -63,26 +62,31 @@ def spotify_charts_csv() -> None:
     login_button = driver.find_element(By.ID, 'login-button') # 예시 id, 실제 id로 대체해야 함
     login_button.click()
 
-    time.sleep(3)
+    time.sleep(2)
     
     logging.info("Accessing website successfully!")
 
-    for url in spotify_chart_urls[:5]:
-        # daily_address = address + '/' + US_DATE
+    for url in spotify_chart_urls:
         driver.get(url)
+        print(url)
 
         time.sleep(5)
         # 쿠키 삭제
         try:
             driver.find_element(By.CLASS_NAME, 'onetrust-close-btn-handler.onetrust-close-btn-ui.banner-close-button.ot-close-icon').click()
         except:
+            print('No need to delete cookie')
             pass
 
-        time.sleep(2)
-        # 다운로드 버튼 클릭
-        driver.find_element(By.CLASS_NAME, 'styled__CSVLink-sc-135veyd-5.kMpXks').click()
-
         time.sleep(5)
+        # 다운로드 버튼 클릭
+        try:
+            driver.find_element(By.CLASS_NAME, 'styled__CSVLink-sc-135veyd-5.kMpXks').click()
+            print("Click the download botton successfully!")
+        except:
+            print('Fail to click download button')
+            pass
+        time.sleep(2)
 
     driver.quit()
 
@@ -152,10 +156,10 @@ with DAG(dag_id="spotify_charts_dag",
         task_id="start_task"
     )
 
-    spotify_charts_csv_task = PythonOperator(
-        task_id="urls_task",
-        python_callable=spotify_charts_csv
-    )
+    # spotify_charts_csv_task = PythonOperator(
+    #     task_id="urls_task",
+    #     python_callable=spotify_charts_csv
+    # )
     
     transform_and_concat_csv_task = PythonOperator(
         task_id="transform_and_concat_csv_task",
@@ -187,7 +191,7 @@ with DAG(dag_id="spotify_charts_dag",
         task_id = "end_task"
     )
 
-    start_task >> spotify_charts_csv_task >> transform_and_concat_csv_task 
+    start_task  >> transform_and_concat_csv_task 
     transform_and_concat_csv_task >> load_spotify_charts_to_s3_task 
     
     load_spotify_charts_to_s3_task >> call_trigger_task >> end_task
