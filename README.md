@@ -22,6 +22,11 @@
 ## 📋 About The Project
 * **목표** : 데이터 파이프라인을 구축하여 ETL 과정을 자동화하고, 저장된 데이터를 활용하여 데이터 시각화를 수행하는 프로젝트를 수행한다.
 
+## 🎥 View Demo
+<a href="https://youtu.be/jgr4iWDZkvU" target="_blank">
+    <img src="./asset/thumbnail.png" alt="Demo Thumbnail" style="width:300px;">
+</a>
+
 ### Data Engineering
 1. 데이터 수집 및 저장
     * spotify chart, spotify api, last.fm 사이트에서 2024년 발매 음악 데이터를 수집하여 AWS S3에 저장
@@ -120,8 +125,3 @@
 ├── README.md
 ├── LICENSE
 ```
-
-## 🎥 View Demo
-<a href="https://youtu.be/jgr4iWDZkvU" target="_blank">
-    <img src="./asset/thumbnail.png" alt="Demo Thumbnail" style="width:300px;">
-</a>
